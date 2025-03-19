@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+}
+
+.bg-base {
+   background-image: url('/images/background.jpg');
+   background-size: cover;
+   background-position: center;
+}
+
+.primary-gradient {
+  background: #554023;
+  background: linear-gradient(to right,#ffea7a,#d5a44d, #ffea7a);
+}
+
+.primary-text-gradient {
+  background: #554023;
+  background: linear-gradient(to right,#ffea7a,#d5a44d, #ffea7a);
+  background-clip: text;
+  color: transparent;
+}
+
+.black_btn {
+  @apply rounded-full border border-black bg-black py-1.5 px-5 text-white transition-all hover:bg-white hover:text-black text-center text-sm flex items-center justify-center;
+}
+
+.primary_btn {
+  @apply rounded-full py-1.5 px-5 text-black text-center text-2xl font-bold flex items-center justify-center;
+}

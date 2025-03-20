@@ -1,48 +1,24 @@
 "use client";
 
-import { signIn, useSession, getProviders, signOut } from 'next-auth/react';
-import { useState, useEffect } from 'react';
+import { signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 const CreateChallenge = () => {
-  const { data: session } = useSession();
-  const [providers, setProviders] = useState(null);
+  const router = useRouter();
 
-  useEffect(() => {
-    const setUpProviders = async () => {
-      try {
-        const response = await getProviders();
-        setProviders(response);
-      } catch (error) {
-        console.error("Error loading providers:", error);
-      }
-    };
-    setUpProviders();
-  }, []);
-
+  const handleSignOut = async () => {
+    await signOut({ callbackUrl: '/' });
+    router.push('/');
+  };
 
   return (
     <section className="w-full h-screen bg-base flex flex-col justify-center items-center">
-      {session?.user ? (
-        <div>
-          <button
-          type='button'
-          onClick={signOut}>Sign Out</button>
-        </div>
-      ) : (
-        <>
-          {providers &&
-            Object.values(providers).map((provider) => (
-              <button
-                type="button"
-                key={provider.name}
-                onClick={() => signIn(provider.id)}
-                className="text-white bg-blue-500 p-2 rounded m-2"
-              >
-                Sign In with {provider.name}
-              </button>
-            ))}
-        </>
-      )}
+      <button
+        onClick={handleSignOut}
+        className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+      >
+        Abmelden
+      </button>
     </section>
   );
 };

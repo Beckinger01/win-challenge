@@ -3,8 +3,7 @@ import React from 'react'
 
 const Register = () => {
   return (
-    <section className='w-full h-screen bg-base flex-col content-center'>
-      <h1 className='text-white'>Hier Registrieren</h1>
+    <section className='w-full h-screen flex flex-col items-center justify-center'>
       <SignUpForm />
     </section>
   )

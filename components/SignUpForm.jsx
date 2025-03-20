@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function SignUpForm() {
   const [formData, setFormData] = useState({
@@ -46,9 +47,8 @@ export default function SignUpForm() {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100">
-      <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold mb-6 text-center">Registrieren</h2>
+      <div className="w-full max-w-md mx-auto p-6 bg-gray-900 rounded-2xl border border-gray-800">
+        <h2 className="text-2xl font-bold mb-6 text-center primary-text-gradient">Registrieren</h2>
 
         {error && (
           <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
@@ -58,7 +58,7 @@ export default function SignUpForm() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="username" className="block text-sm font-medium text-white mb-1">
               Benutzername
             </label>
             <input
@@ -69,12 +69,12 @@ export default function SignUpForm() {
               onChange={handleChange}
               placeholder="Ihr Benutzername"
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border text-white border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="email" className="block text-sm font-medium text-white mb-1">
               E-Mail
             </label>
             <input
@@ -85,12 +85,12 @@ export default function SignUpForm() {
               onChange={handleChange}
               placeholder="ihre.email@beispiel.de"
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border text-white border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="password" className="block text-sm font-medium text-white mb-1">
               Passwort
             </label>
             <input
@@ -101,14 +101,14 @@ export default function SignUpForm() {
               onChange={handleChange}
               placeholder="••••••••"
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border text-white border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
+            className="w-full py-2 px-4 primary-gradient hover:bg-blue-700 text-gray-900 font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
           >
             {isLoading ? 'Wird bearbeitet...' : 'Registrieren'}
           </button>
@@ -117,12 +117,11 @@ export default function SignUpForm() {
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
             Bereits registriert?{' '}
-            <a href="/auth/signin" className="text-blue-600 hover:text-blue-800">
+            <Link href="/login" className="primary-text-gradient hover:text-blue-800">
               Anmelden
-            </a>
+            </Link>
           </p>
         </div>
       </div>
-    </div>
   );
 }

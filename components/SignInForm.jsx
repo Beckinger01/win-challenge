@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function SignInForm() {
   const [formData, setFormData] = useState({
@@ -34,7 +35,7 @@ export default function SignInForm() {
       if (result.error) {
         setError(result.error);
       } else {
-        router.push('/dashboard'); // oder eine andere Zielseite nach erfolgreicher Anmeldung
+        router.push('/');
       }
     } catch (err) {
       setError(err.message || 'Ein Fehler ist aufgetreten');
@@ -44,9 +45,8 @@ export default function SignInForm() {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto p-6 bg-white bg-opacity-10 backdrop-blur-sm rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-6 text-center text-white">Anmelden</h2>
-
+    <div className="w-full max-w-md mx-auto p-6 bg-gray-900 rounded-2xl border border-gray-800">
+      <h2 className="text-2xl font-bold mb-6 text-center primary-text-gradient">Anmelden</h2>
       {error && (
         <div className="mb-4 p-3 bg-red-100 bg-opacity-90 text-red-700 rounded-md">
           {error}
@@ -66,7 +66,7 @@ export default function SignInForm() {
             onChange={handleChange}
             placeholder="ihre.email@beispiel.de"
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
@@ -82,7 +82,7 @@ export default function SignInForm() {
             onChange={handleChange}
             placeholder="••••••••"
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
@@ -100,19 +100,28 @@ export default function SignInForm() {
           </div>
 
           <div className="text-sm">
-            <a href="#" className="text-blue-300 hover:text-blue-400">
+            <Link href="#" className="primary-text-gradient cursor-pointer">
               Passwort vergessen?
-            </a>
+            </Link>
           </div>
         </div>
 
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
+          className="w-full py-2 px-4 primary-gradient hover:bg-blue-700 text-gray-900 cursor-pointer font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
         >
           {isLoading ? 'Wird angemeldet...' : 'Anmelden'}
         </button>
+
+        <div className="pt-4 text-center">
+          <p className='text-sm text-gray-600'>
+          Noch keinen Account?{' '}
+          <Link href="/signup" className="primary-text-gradient hover:text-blue-400 text-sm">
+            Registrieren
+          </Link>
+          </p>
+        </div>
       </form>
     </div>
   );

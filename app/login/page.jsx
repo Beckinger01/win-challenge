@@ -3,7 +3,6 @@
 import SignInForm from '@components/SignInForm';
 import { signIn, useSession, getProviders, signOut } from 'next-auth/react';
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 const Login = () => {
@@ -17,7 +16,7 @@ const Login = () => {
   }, [session, router]);
 
   return (
-    <section className='w-full h-screen bg-base flex items-center justify-center'>
+    <section className='w-full h-screen flex items-center justify-center'>
       <div className="max-w-md w-full px-6 py-8">
         {session?.user ? (
           <div className="w-full h-screen bg-base flex items-center justify-center">
@@ -25,14 +24,13 @@ const Login = () => {
         </div>
         ) : (
           <div className="space-y-6">
-            <h1 className="text-3xl font-bold text-center text-white mb-6">Anmelden</h1>
 
             <SignInForm />
 
             <button
               type="button"
               onClick={() => signIn('google')}
-              className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-white text-gray-700 font-medium rounded-md hover:bg-gray-100 transition-colors mb-4"
+              className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-gray-900 primary-text-gradient cursor-pointer font-medium rounded-md hover:bg-gray-100 transition-colors mb-4"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path
@@ -54,12 +52,6 @@ const Login = () => {
               </svg>
               Mit Google anmelden
             </button>
-
-            <div className="pt-4 text-center">
-              <Link href="/signup" className="text-blue-300 hover:text-blue-400 text-sm">
-                Noch keinen Account? Registrieren
-              </Link>
-            </div>
           </div>
         )}
       </div>

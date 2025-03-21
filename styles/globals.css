@@ -5,10 +5,18 @@
   --color-foreground: var(--foreground);
 }
 
-.bg-base {
-   background-image: url('/images/background.jpg');
-   background-size: cover;
-   background-position: center;
+body {
+  /* Mehrere Hintergrundebenen */
+  background-image:
+    url('/images/background.jpg');
+
+  background-size: 100% 100%, 100% auto;
+  background-repeat: no-repeat, repeat-y;
+  background-position: center top;
+  background-attachment: fixed;
+
+  background-color: rgba(46, 46, 46, 1);
+
 }
 
 .primary-text {
@@ -20,15 +28,16 @@
   background: linear-gradient(to right,#ffea7a,#d5a44d, #ffea7a);
 }
 
+.hover\:primary-gradient:hover {
+  background: #554023;
+  background: linear-gradient(to right,#ffea7a,#d5a44d, #ffea7a);
+}
+
 .primary-text-gradient {
   background: #554023;
   background: linear-gradient(to right,#ffea7a,#d5a44d, #ffea7a);
   background-clip: text;
   color: transparent;
-}
-
-.black_btn {
-  @apply rounded-full border border-black bg-black py-1.5 px-5 text-white transition-all hover:bg-white hover:text-black text-center text-sm flex items-center justify-center;
 }
 
 .primary_btn {

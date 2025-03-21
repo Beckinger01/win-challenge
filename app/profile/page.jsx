@@ -1,11 +1,83 @@
+"use client";
 
+import { useSession } from "next-auth/react";
+import { useState, useEffect } from "react";
+import ProfileChallengeCard from "@components/ProfileChallengeCard";
 
 const Profile = () => {
+  const { data: session } = useSession();
+  const [challenges, setChallenges] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchChallenges = async () => {
+      if (!session?.user) return;
+
+      try {
+        setLoading(true);
+        const response = await fetch("/api/challenges");
+
+        if (!response.ok) {
+          throw new Error("Fehler beim Laden der Challenges");
+        }
+
+        const data = await response.json();
+        setChallenges(data);
+      } catch (err) {
+        console.error("Fehler beim Laden der Challenges:", err);
+        setError(err.message || "Fehler beim Laden der Challenges");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchChallenges();
+  }, [session]);
+
+  if (!session) {
+    return (
+      <section className="w-full h-screen flex-col justify-center items-center">
+        <h1 className="text-white text-2xl text-center mt-10">Bitte melde dich an, um dein Profil zu sehen.</h1>
+      </section>
+    );
+  }
+
   return (
-    <section className="w-full h-screen flex-col">
+    <section className="w-full min-h-screen flex flex-col p-6">
+      <h1 className="text-white text-5xl font-bold mb-2">Hallo, {session?.user.username || session?.user.name}!</h1>
 
+      <div className="mt-8 mb-4 text-center">
+        <h2 className="text-white text-4xl pb-4 font-semibold border-b-4 border-[#a6916e]">Challenges</h2>
+      </div>
+
+      {loading ? (
+        <p className="text-white">Challenges werden geladen...</p>
+      ) : error ? (
+        <p className="text-red-500">{error}</p>
+      ) : challenges.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {challenges.map((challenge) => (
+            <ProfileChallengeCard
+              key={challenge._id}
+              id={challenge._id}
+              name={challenge.name}
+              timer={challenge.timer}
+              startDate={challenge.createdAt}
+              type={challenge.type}
+              gameCount={challenge.games.length}
+            />
+          ))}
+        </div>
+      ) : (
+        <p className="text-white">Du hast noch keine Challenges erstellt.</p>
+      )}
+
+      <div className="mt-8 mb-4 text-center">
+        <h2 className="text-white text-4xl pb-4 font-semibold border-b-4 border-[#a6916e]">Einstellungen</h2>
+      </div>
     </section>
-  )
-}
+  );
+};
 
-export default Profile
+export default Profile;

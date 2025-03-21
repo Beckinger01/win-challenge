@@ -66,7 +66,7 @@ export default function SignInForm() {
             onChange={handleChange}
             placeholder="ihre.email@beispiel.de"
             required
-            className="w-full px-3 py-2 border border-gray-300 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-[#a6916e] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
@@ -82,7 +82,7 @@ export default function SignInForm() {
             onChange={handleChange}
             placeholder="••••••••"
             required
-            className="w-full px-3 py-2 border border-gray-300 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-[#a6916e] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
@@ -92,7 +92,7 @@ export default function SignInForm() {
               id="remember-me"
               name="remember-me"
               type="checkbox"
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-[#a6916e] rounded"
             />
             <label htmlFor="remember-me" className="ml-2 block text-sm text-white">
               Angemeldet bleiben

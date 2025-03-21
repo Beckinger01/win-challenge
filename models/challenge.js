@@ -1,6 +1,5 @@
 import { Schema, model, models } from "mongoose";
 
-// Timer-Schema für die Zeitmessung
 const TimerSchema = new Schema({
   startTime: {
     type: Date,
@@ -11,7 +10,7 @@ const TimerSchema = new Schema({
     default: null
   },
   duration: {
-    type: Number, // Dauer in Millisekunden
+    type: Number,
     default: 0
   },
   isRunning: {
@@ -19,7 +18,7 @@ const TimerSchema = new Schema({
     default: false
   },
   pausedTime: {
-    type: Number, // Akkumulierte Zeit während Pausen
+    type: Number,
     default: 0
   },
   lastPauseTime: {
@@ -46,7 +45,6 @@ const GameSchema = new Schema({
     type: Boolean,
     default: false
   },
-  // Timer für jedes einzelne Spiel
   timer: {
     type: TimerSchema,
     default: () => ({})
@@ -90,14 +88,13 @@ const ChallengeSchema = new Schema({
     type: Date,
     default: null
   },
-  // Haupt-Timer für die gesamte Challenge
   timer: {
     type: TimerSchema,
     default: () => ({})
   }
 });
 
-// Check if the model already exists to prevent recompilation error during hot reloads
+
 const Challenge = models.Challenge || model("Challenge", ChallengeSchema);
 
 export default Challenge;

@@ -7,17 +7,15 @@ const KlassischOption = () => {
   const { data: session } = useSession();
 
   return (
-    <section className="w-full h-screen flex flex-col justify-center items-center">
-
-    {session?.user ? (
-      <>
-      <KlassischChallengeForm />
-      </>
-    ) : (
-      <h1>Du bist nicht eingeloggt!</h1>
-    )
-    }
-    </section>
+    <div className="flex justify-center pt-8 pb-16 min-h-screen overflow-y-auto">
+      <div className="max-w-2xl w-full px-4 mt-4">
+        {session?.user ? (
+          <KlassischChallengeForm />
+        ) : (
+          <h1 className="text-white text-center text-2xl">Du bist nicht eingeloggt!</h1>
+        )}
+      </div>
+    </div>
   );
 };
 

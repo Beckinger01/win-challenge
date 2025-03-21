@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link"
+import KlassischChallengeForm from "@components/KlassischChallengeForm";
 import { useSession } from "next-auth/react";
 
 const KlassischOption = () => {
@@ -11,7 +11,7 @@ const KlassischOption = () => {
 
     {session?.user ? (
       <>
-      
+      <KlassischChallengeForm />
       </>
     ) : (
       <h1>Du bist nicht eingeloggt!</h1>

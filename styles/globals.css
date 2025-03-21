@@ -11,6 +11,10 @@
    background-position: center;
 }
 
+.primary-text {
+  @apply text-[#c4af88]
+}
+
 .primary-gradient {
   background: #554023;
   background: linear-gradient(to right,#ffea7a,#d5a44d, #ffea7a);
@@ -29,4 +33,8 @@
 
 .primary_btn {
   @apply rounded-full py-1.5 px-5 text-black text-center text-2xl font-bold flex items-center justify-center;
+}
+
+.choose-card {
+  @apply bg-gray-900 text-white rounded-2xl p-6 m-4 border border-[#a6916e] max-w-lg;
 }

@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
 import ProfileChallengeCard from "@components/ProfileChallengeCard";
+import Settings from "@components/Settings";
 
 const Profile = () => {
   const { data: session } = useSession();
@@ -52,7 +53,7 @@ const Profile = () => {
       </div>
 
       {loading ? (
-        <p className="text-white">Challenges werden geladen...</p>
+        <h1 className="text-white w-full text-center text-3xl">Challenges werden geladen...</h1>
       ) : error ? (
         <p className="text-red-500">{error}</p>
       ) : challenges.length > 0 ? (
@@ -76,6 +77,7 @@ const Profile = () => {
       <div className="mt-8 mb-4 text-center">
         <h2 className="text-white text-4xl pb-4 font-semibold border-b-4 border-[#a6916e]">Einstellungen</h2>
       </div>
+      <Settings />
     </section>
   );
 };

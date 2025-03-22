@@ -25,8 +25,13 @@ export const authOptions = {
         try {
           if (credentials.isSignUp === 'true') {
             const existingUser = await User.findOne({ email: credentials.email });
+            const existingUserName = await User.findOne({ username: credentials.username });
             if (existingUser) {
-              throw new Error('User already exists');
+              throw new Error('E-Mail wird bereits verwendet');
+            }
+
+            if (existingUserName) {
+              throw new Error('Benutzername wird bereits verwendet');
             }
 
             const hashedPassword = await hash(credentials.password, 12);
@@ -46,14 +51,14 @@ export const authOptions = {
           } else {
             const user = await User.findOne({ email: credentials.email });
             if (!user) {
-              throw new Error('No user found with the email');
+              throw new Error('Kein Benutzer mit dieser E-Mail gefunden');
             }
             if (!user.password) {
-              throw new Error('This account uses Google authentication');
+              throw new Error('Dieser Benutzer benutzt Google zum Anmelden');
             }
             const isValid = await compare(credentials.password, user.password);
             if (!isValid) {
-              throw new Error('Incorrect password');
+              throw new Error('Passwort ist falsch');
             }
 
             return {

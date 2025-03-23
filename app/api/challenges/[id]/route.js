@@ -121,9 +121,9 @@ export async function DELETE(request, { params }) {
     return new Response(JSON.stringify({ message: "Challenge erfolgreich gelöscht" }), { status: 200 });
   } catch (error) {
     console.error("Fehler beim Löschen der Challenge:", error);
-    return new Response(JSON.stringify({ 
-      message: "Fehler beim Löschen der Challenge", 
-      error: error.message 
+    return new Response(JSON.stringify({
+      message: "Fehler beim Löschen der Challenge",
+      error: error.message
     }), { status: 500 });
   }
 }

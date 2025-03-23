@@ -4,6 +4,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { hash, compare } from 'bcrypt';
 import User from '@models/user';
 import { connectToDB } from '@utils/database';
+import { ObjectId } from "mongodb";
 
 export const authOptions = {
   providers: [
@@ -99,7 +100,13 @@ export const authOptions = {
         session.user.id = token.id;
         try {
           await connectToDB();
-          const currentUser = await User.findById(token.id);
+          let currentUser;
+
+          if(ObjectId.isValid(token.id)) {
+            currentUser = await User.findById(token.id);
+          }else{
+            currentUser = await User.findOne({ email: session.user.email });
+          }
 
           if (currentUser) {
             session.user.username = currentUser.username;

@@ -3,7 +3,6 @@ import Challenge from "@/models/challenge";
 import User from "@/models/user";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import mongoose from "mongoose";
 
 export const POST = async (request) => {
   try {

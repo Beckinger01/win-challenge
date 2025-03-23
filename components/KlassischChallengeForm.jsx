@@ -99,24 +99,42 @@ const KlassischChallengeForm = () => {
         body: JSON.stringify(challengeData),
       });
 
-      const responseText = await response.text();
-
       if (!response.ok) {
+        const responseData = await response.text();
         let errorMessage = "Fehler beim Erstellen der Challenge";
         try {
-          const errorData = JSON.parse(responseText);
+          const errorData = JSON.parse(responseData);
           errorMessage = errorData.message || errorMessage;
           console.error("Server error details:", errorData);
         } catch (e) {
-
-          console.error("Raw server error:", responseText);
+          console.error("Raw server error:", responseData);
         }
         throw new Error(errorMessage);
       }
 
-      console.log("Challenge erfolgreich erstellt:", responseText);
+      // Parsen der Antwort, um die Challenge-ID zu erhalten
+      const responseData = await response.json();
+      console.log("Challenge-Antwort:", responseData);
 
-      router.push("/dashboard");
+      // Ermittle die ID aus der Antwort - überprüfe verschiedene mögliche Feldnamen
+      const challengeId = responseData.id || responseData._id || responseData.challengeId;
+      console.log("Extrahierte Challenge-ID:", challengeId);
+
+      if (challengeId) {
+        // Erweiterte Debug-Informationen
+        console.log("Redirect-URL:", `/challenge/${challengeId}`);
+
+        // Kurzer Timeout, um sicherzustellen, dass die Daten in der DB verfügbar sind
+        setTimeout(() => {
+          // Setze den Pfad für die Weiterleitung
+          const path = `/challenge/${challengeId}`;
+          console.log("Navigiere zu:", path);
+          router.push(path);
+        }, 500);
+      } else {
+        console.warn("Keine Challenge-ID in der Antwort gefunden, Fallback zum Dashboard");
+        router.push("/dashboard");
+      }
 
     } catch (error) {
       console.error("Error creating challenge:", error);

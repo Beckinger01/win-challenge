@@ -3,16 +3,22 @@
 import { useState } from "react";
 import { Pencil, Save, X } from "lucide-react";
 
-const EmailEditForm = ({ session, onUpdate, showMessage }) => {
+const EmailEditForm = ({ session, onUpdate, showMessage, emailMask }) => {
   const [editing, setEditing] = useState(false);
-  const [newEmail, setNewEmail] = useState(session?.user?.email || "");
+  const [newEmail, setNewEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
 
   const handleUpdate = async () => {
 
     if (!newEmail || !newEmail.includes('@') || !newEmail.includes('.')) {
       setError("Bitte gib eine gültige E-Mail-Adresse ein.");
+      return;
+    }
+
+    if (!currentPassword) {
+      setError("Bitte gib dein aktuelles Passwort ein.");
       return;
     }
 
@@ -25,7 +31,7 @@ const EmailEditForm = ({ session, onUpdate, showMessage }) => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email: newEmail }),
+        body: JSON.stringify({ email: newEmail, currentPassword }),
       });
 
       const data = await response.json();
@@ -38,7 +44,11 @@ const EmailEditForm = ({ session, onUpdate, showMessage }) => {
 
       setEditing(false);
 
-      showMessage("E-Mail erfolgreich aktualisiert!");
+      showMessage("E-Mail erfolgreich aktualisiert! Seite wird neu geladen...");
+
+      setTimeout(() => {
+      window.location.reload();
+      }, 1500);
 
     } catch (error) {
       console.error("Fehler beim Aktualisieren der E-Mail:", error);
@@ -69,9 +79,19 @@ const EmailEditForm = ({ session, onUpdate, showMessage }) => {
       </div>
 
       {!editing ? (
-        <p className="text-[#a6916e]">{session?.user.email}</p>
+        <p className="text-[#a6916e]">{emailMask}</p>
       ) : (
         <div className="space-y-2">
+          <label className="block text-sm text-gray-300 mb-1">Aktuelles Passwort</label>
+          <input
+            type="password"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            className="w-full bg-gray-700 text-white border border-[#a6916e] rounded-md px-3 py-2"
+            placeholder="Aktuelles Passwort"
+            disabled={isSubmitting}
+          />
+          <label className="block text-sm text-gray-300 mb-1">Neue E-Mail</label>
           <input
             type="email"
             value={newEmail}

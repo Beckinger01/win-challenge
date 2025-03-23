@@ -39,7 +39,7 @@ const PasswordEditForm = ({ showMessage }) => {
 
     try {
       setIsSubmitting(true);
-      
+
       const response = await fetch("/api/user/update-password", {
         method: "PUT",
         headers: {
@@ -59,10 +59,10 @@ const PasswordEditForm = ({ showMessage }) => {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      
+
       // Zeige Erfolgsmeldung
       showMessage("Passwort erfolgreich aktualisiert!");
-      
+
     } catch (error) {
       console.error("Fehler beim Aktualisieren des Passworts:", error);
       setError(error.message || "Ein Fehler ist aufgetreten. Bitte versuche es erneut.");

@@ -12,7 +12,7 @@ const RootLayout =({ children }) => {
     <html lang="de">
       <body>
       <Provider>
-        <main className='pt-16'>
+        <main className='pt-16 font-int'>
           <Nav />
           {children}
         </main>

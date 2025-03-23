@@ -2,6 +2,7 @@ import { connectToDB } from "@/utils/database";
 import User from "@/models/user";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { compare } from "bcrypt";
 
 export async function PUT(request) {
   try {
@@ -13,7 +14,7 @@ export async function PUT(request) {
       return new Response(JSON.stringify({ message: "Nicht autorisiert" }), { status: 401 });
     }
 
-    const { email } = await request.json();
+    const { email, currentPassword } = await request.json();
 
     // E-Mail validieren
     if (!email || !email.includes('@') || !email.includes('.')) {
@@ -29,6 +30,11 @@ export async function PUT(request) {
 
     if (!user) {
       return new Response(JSON.stringify({ message: "Benutzer nicht gefunden" }), { status: 404 });
+    }
+
+    const isPasswordValid = await compare(currentPassword, user.password);
+        if (!isPasswordValid) {
+          return new Response(JSON.stringify({ message: "Aktuelles Passwort ist falsch" }), { status: 401 });
     }
     user.email = email;
     await user.save();

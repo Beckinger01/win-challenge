@@ -23,6 +23,23 @@ const Settings = () => {
     }
   }, [session]);
 
+  const maskEmail = (email) => {
+    if (!email) return '';
+
+    const [username, domain] = email.split('@');
+
+    if (username.length <= 2) {
+      return `${username.charAt(0)}*@${domain}`;
+    }
+
+    const firstChar = username.charAt(0);
+    const lastChar = username.charAt(username.length - 1);
+    const maskedLength = username.length - 2;
+    const maskedUsername = `${firstChar}${'*'.repeat(maskedLength)}${lastChar}`;
+
+    return `${maskedUsername}@${domain}`;
+  };
+
   const showMessage = (message, isError = false) => {
     if (isError) {
       setErrorMessage(message);
@@ -68,12 +85,7 @@ const Settings = () => {
 
       <div className="text-gray-400 mb-6">
         <span>Angemeldet als: </span>
-        <span className="text-[#a6916e]">{session.user.email}</span>
-        <span> (</span>
-        <span className="text-[#a6916e]">
-          {isCredentialsUser ? 'E-Mail/Passwort' : 'Google'}-Login
-        </span>
-        <span>)</span>
+        <span className="text-[#a6916e]">{maskEmail(session?.user.email)}</span>
       </div>
 
       {/* Erfolgsmeldung */}
@@ -105,6 +117,7 @@ const Settings = () => {
             session={session}
             onUpdate={(data) => handleSessionUpdate(data, true)}
             showMessage={showMessage}
+            emailMask={maskEmail(session?.user.email)}
           />
 
           {/* Passwort-Formular */}

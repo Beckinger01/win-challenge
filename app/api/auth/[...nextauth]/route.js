@@ -100,6 +100,7 @@ export const authOptions = {
         try {
           await connectToDB();
           const currentUser = await User.findById(token.id);
+
           if (currentUser) {
             session.user.username = currentUser.username;
             session.user.email = currentUser.email;

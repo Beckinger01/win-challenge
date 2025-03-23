@@ -97,7 +97,22 @@ export const authOptions = {
     async session({ session, token }) {
       if (token) {
         session.user.id = token.id;
-        session.user.username = token.username;
+        try {
+          await connectToDB();
+          const currentUser = await User.findById(token.id);
+          if (currentUser) {
+            session.user.username = currentUser.username;
+            session.user.email = currentUser.email;
+            if (currentUser.image) {
+              session.user.image = currentUser.image;
+            }
+          } else {
+            session.user.username = token.username;
+          }
+        } catch (error) {
+          console.error("Fehler beim Laden der aktuellen Benutzerdaten:", error);
+          session.user.username = token.username;
+        }
       }
       return session;
     },

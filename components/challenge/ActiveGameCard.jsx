@@ -91,27 +91,15 @@ const ActiveGameCard = ({
       <div className="flex justify-between gap-2">
         <button
           onClick={handleWinClick}
-          disabled={disabled || isGameCompleted}
+          disabled={disabled || isGameCompleted || !isActive}
           className={`flex-1 flex justify-center items-center gap-1 py-2 rounded ${
-            disabled || isGameCompleted
+            disabled || isGameCompleted || !isActive
               ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
               : 'bg-blue-700 hover:bg-blue-600 text-white'
           }`}
         >
           <TrophyIcon size={16} />
           <span>Sieg</span>
-        </button>
-
-        <button
-          onClick={handleResetClick}
-          disabled={isRunning}
-          className={`flex justify-center items-center p-2 rounded ${
-            isRunning
-              ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-              : 'bg-gray-700 hover:bg-gray-600 text-white'
-          }`}
-        >
-          <RotateCcwIcon size={16} />
         </button>
       </div>
     </div>

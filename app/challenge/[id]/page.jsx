@@ -246,7 +246,7 @@ const ChallengeDetailPage = () => {
                 onClick={() => selectGame(index)}
                 onIncrementWin={() => incrementWin(index)}
                 onReset={() => resetGame(index)}
-                disabled={challenge.completed || challenge.forfeited || (game.completed && isRunning)} // Bei forfeited deaktivieren
+                disabled={!isRunning || challenge.completed || challenge.forfeited || (game.completed && isRunning)} // Bei forfeited deaktivieren
               />
             ))}
           </div>

@@ -31,7 +31,7 @@ const ProfileChallengeCard = ({name, timer = {}, id, startDate, type, gameCount 
   const formattedDate = formatDate(startDate);
 
   return (
-    <Link href={`/challenge/${id}`} className="block">
+    <Link href={`/challenge-view/${id}`} className="block">
       <div className="bg-gray-800 rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow duration-300 border border-[#a6916e] hover:border-blue-600">
         <h3 className="text-white text-4xl font-semibold mb-3 text-center">{name}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-y-10">

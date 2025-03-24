@@ -7,95 +7,92 @@ import mongoose from "mongoose";
 export async function PUT(request, { params }) {
   try {
     await connectToDB();
-    // WICHTIG: Kein 'await' bei params - es ist bereits ein Objekt
     const { id } = await params;
-    const { action, gameIndex, duration } = await request.json();
-
-    console.log("Timer-API aufgerufen:", { id, action, gameIndex, duration });
-
+    const { action, gameIndex } = await request.json();
+    
+    console.log("Timer-API aufgerufen:", { id, action, gameIndex });
+    
     if (!ObjectId.isValid(id)) {
       return NextResponse.json(
         { message: 'Ungültige Challenge-ID' },
         { status: 400 }
       );
     }
-
-    // Direkter Zugriff auf die Sammlung über Mongoose
+    
     const db = mongoose.connection.db;
     const challengesCollection = db.collection("challenges");
-
+    
     const challenge = await challengesCollection.findOne({
       _id: new ObjectId(id)
     });
-
+    
     if (!challenge) {
       return NextResponse.json(
         { message: 'Challenge nicht gefunden' },
         { status: 404 }
       );
     }
-
+    
     const now = new Date();
     let updateQuery = {};
-
+    
     if (action === 'start') {
       // Haupttimer starten
       updateQuery = {
         $set: {
           "timer.isRunning": true,
-          "timer.lastStarted": now
+          "timer.startTime": now
         }
       };
-
+      
       // Wenn ein spezifisches Spiel gestartet werden soll
       if (gameIndex !== undefined) {
         const gameKey = `games.${gameIndex}.timer`;
         updateQuery.$set[`${gameKey}.isRunning`] = true;
-        updateQuery.$set[`${gameKey}.lastStarted`] = now;
+        updateQuery.$set[`${gameKey}.startTime`] = now;
       }
     } else if (action === 'stop') {
-      let mainDuration = duration;
-
-      // Fallback: berechne die verstrichene Zeit
-      if (mainDuration === undefined && challenge.timer && challenge.timer.lastStarted) {
-        mainDuration = now - new Date(challenge.timer.lastStarted);
+      // Berechne die verstrichene Zeit seit dem Start
+      let additionalDuration = 0;
+      
+      if (challenge.timer?.isRunning && challenge.timer?.startTime) {
+        additionalDuration = now - new Date(challenge.timer.startTime);
       }
-
-      // Fallback: verwende den aktuellen Wert
-      if (mainDuration === undefined) {
-        mainDuration = challenge.timer?.duration || 0;
-      }
-
+      
+      let totalDuration = (challenge.timer?.duration || 0) + additionalDuration;
+      
       // Haupttimer stoppen
       updateQuery = {
         $set: {
           "timer.isRunning": false,
-          // EXPLIZIT den übergebenen oder berechneten Wert setzen
-          "timer.duration": mainDuration
+          "timer.duration": totalDuration,
+          "timer.endTime": now
         },
         $unset: {
-          "timer.lastStarted": ""
+          "timer.startTime": ""
         }
       };
-
+      
       // Wenn ein spezifisches Spiel gestoppt werden soll
       if (gameIndex !== undefined) {
         const gameKey = `games.${gameIndex}.timer`;
-        let gameDuration = duration;
-
-        // Fallback: Berechnung wenn keine Dauer angegeben
-        if (gameDuration === undefined) {
-          const gameTimer = challenge.games[gameIndex]?.timer || {};
-          if (gameTimer && gameTimer.lastStarted) {
-            gameDuration = now - new Date(gameTimer.lastStarted);
-          } else {
-            gameDuration = gameTimer.duration || 0;
-          }
+        const gameTimer = challenge.games[gameIndex]?.timer || {};
+        
+        let gameAdditionalDuration = 0;
+        if (gameTimer.isRunning && gameTimer.startTime) {
+          gameAdditionalDuration = now - new Date(gameTimer.startTime);
         }
-
+        
+        let gameTotalDuration = (gameTimer.duration || 0) + gameAdditionalDuration;
+        
         updateQuery.$set[`${gameKey}.isRunning`] = false;
-        updateQuery.$set[`${gameKey}.duration`] = gameDuration;
-        updateQuery.$unset[`${gameKey}.lastStarted`] = "";
+        updateQuery.$set[`${gameKey}.duration`] = gameTotalDuration;
+        updateQuery.$set[`${gameKey}.endTime`] = now;
+        
+        if (!updateQuery.$unset) {
+          updateQuery.$unset = {};
+        }
+        updateQuery.$unset[`${gameKey}.startTime`] = "";
       }
     } else {
       return NextResponse.json(
@@ -103,14 +100,20 @@ export async function PUT(request, { params }) {
         { status: 400 }
       );
     }
-
+    
+    // Logging für Debugging
+    console.log("Update Query:", JSON.stringify(updateQuery, null, 2));
+    
     // Update in der Datenbank ausführen
     const result = await challengesCollection.findOneAndUpdate(
       { _id: new ObjectId(id) },
       updateQuery,
       { returnDocument: 'after' }
     );
-
+    
+    // Logge das Ergebnis
+    console.log("Timer Update Ergebnis:", result.value ? "Erfolgreich" : "Fehlgeschlagen");
+    
     return NextResponse.json(result.value || result);
   } catch (error) {
     console.error("Fehler beim Aktualisieren des Challenge-Timers:", error);

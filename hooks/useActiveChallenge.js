@@ -1,671 +1,801 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 export function useActiveChallenge(initialChallenge, setChallenge) {
   const router = useRouter();
+  
+  // Status
   const [isRunning, setIsRunning] = useState(false);
-  const [activeGameIndex, setActiveGameIndex] = useState(-1);
   const [isPaused, setIsPaused] = useState(false);
-  const [pauseStartTime, setPauseStartTime] = useState(null);
-  const [pauseDuration, setPauseDuration] = useState(0);
-  const [displayTimers, setDisplayTimers] = useState({
+  const [activeGameIndex, setActiveGameIndex] = useState(-1);
+  
+  // Zustandsvariablen für Pausentimer
+  const [totalPauseDuration, setTotalPauseDuration] = useState(0);
+  const [currentPauseTimer, setCurrentPauseTimer] = useState(0);
+  
+  // Timer-Werte
+  const [timers, setTimers] = useState({
     main: 0,
     games: {}
   });
-
-  // Refs für Timer und Challenge
+  
+  // Refs
+  const challengeRef = useRef(initialChallenge);
   const timerRef = useRef(null);
   const pauseTimerRef = useRef(null);
-  const challengeRef = useRef(initialChallenge);
-
-  // Refs für Funktionen, um zirkuläre Abhängigkeiten zu vermeiden
-  const startChallengeRef = useRef(null);
-  const pauseChallengeRef = useRef(null);
-  const resumeChallengeRef = useRef(null);
-  const selectGameRef = useRef(null);
-  const incrementWinRef = useRef(null);
-  const resetGameRef = useRef(null);
-  const forfeitChallengeRef = useRef(null);
-
-  // Challenge-Ref aktualisieren
+  const startTimeRef = useRef(null);
+  const pauseStartTimeRef = useRef(null);
+  
+  // Debug-Helfer
+  const logTimers = () => {
+    console.log("Timer-Stand:", {
+      main: timers.main,
+      games: timers.games,
+      activeGameIndex,
+      isRunning,
+      isPaused,
+      totalPauseDuration,
+      currentPauseTimer,
+      displayedPauseDuration: totalPauseDuration + currentPauseTimer
+    });
+  };
+  
+  // Helfer-Funktion, um Timer im localStorage zu speichern
+  const saveTimerState = () => {
+    if (challengeRef.current?._id) {
+      const state = {
+        timers,
+        isRunning,
+        isPaused,
+        activeGameIndex,
+        totalPauseDuration,
+        pauseStartTime: pauseStartTimeRef.current,
+        currentPauseTimer,
+        lastUpdated: Date.now()
+      };
+      localStorage.setItem(`timer_state_${challengeRef.current._id}`, JSON.stringify(state));
+    }
+  };
+  
+  const loadTimerState = () => {
+    if (challengeRef.current?._id) {
+      const savedState = localStorage.getItem(`timer_state_${challengeRef.current._id}`);
+      if (savedState) {
+        try {
+          const state = JSON.parse(savedState);
+          
+          // Timer-Werte laden
+          setTimers(state.timers);
+          setIsRunning(state.isRunning);
+          setIsPaused(state.isPaused);
+          setActiveGameIndex(state.activeGameIndex);
+          setTotalPauseDuration(state.totalPauseDuration || 0);
+          
+          console.log("Timer-Status geladen:", state);
+          
+          // Wenn pausiert, Pausetimer fortsetzen
+          if (state.isPaused) {
+            // Bisherige Pausendauer beibehalten
+            setCurrentPauseTimer(state.currentPauseTimer || 0);
+            
+            // Neuen Pausenstart simulieren, basierend auf der bisherigen Pausendauer
+            const adjustedStartTime = Date.now() - (state.currentPauseTimer || 0);
+            pauseStartTimeRef.current = adjustedStartTime;
+            
+            // Pausetimer starten
+            pauseTimerRef.current = setInterval(() => {
+              const elapsed = Date.now() - pauseStartTimeRef.current;
+              setCurrentPauseTimer(elapsed);
+            }, 100);
+            
+            console.log("Pausetimer fortgesetzt mit:", {
+              adjustedStartTime,
+              currentPauseTimer: state.currentPauseTimer,
+              totalPauseDuration: state.totalPauseDuration
+            });
+          }
+          
+          // Wenn der Timer läuft, Zeit seit dem letzten Speichern berücksichtigen
+          if (state.isRunning && !state.isPaused) {
+            const lastUpdated = state.lastUpdated;
+            const now = Date.now();
+            const elapsedSinceLastUpdate = lastUpdated ? now - lastUpdated : 0;
+            
+            console.log("Zeit seit letztem Update:", {
+              lastUpdated,
+              vergangeneZeit: elapsedSinceLastUpdate
+            });
+            
+            // Timer-Werte anpassen
+            const updatedTimers = {
+              main: state.timers.main + elapsedSinceLastUpdate,
+              games: { ...state.timers.games }
+            };
+            
+            // Wenn ein Spiel aktiv war, dessen Timer auch anpassen
+            if (state.activeGameIndex >= 0) {
+              updatedTimers.games[state.activeGameIndex] = 
+                (state.timers.games[state.activeGameIndex] || 0) + elapsedSinceLastUpdate;
+            }
+            
+            // Aktualisiere Timer mit angepassten Werten
+            setTimers(updatedTimers);
+            
+            // Starte Timer mit aktualisierten Werten
+            const timerStartTs = Date.now();
+            const initialTimerValues = {...updatedTimers};
+            
+            if (timerRef.current) {
+              clearInterval(timerRef.current);
+            }
+            
+            timerRef.current = setInterval(() => {
+              // Berechne, wie viel Zeit tatsächlich vergangen ist
+              const currentTs = Date.now();
+              const elapsedSinceStart = currentTs - timerStartTs;
+              
+              setTimers(prev => {
+                // Berechne die absoluten Werte basierend auf der tatsächlich verstrichenen Zeit
+                const updated = { 
+                  main: initialTimerValues.main + elapsedSinceStart,
+                  games: { ...initialTimerValues.games }
+                };
+                
+                // Aktives Spiel aktualisieren
+                if (state.activeGameIndex >= 0) {
+                  const initialGameTime = initialTimerValues.games[state.activeGameIndex] || 0;
+                  updated.games[state.activeGameIndex] = initialGameTime + elapsedSinceStart;
+                }
+                
+                return updated;
+              });
+            }, 100);
+            
+            // Aktualisiere auch den Haupttimer in der DB
+            updateMainTimer(updatedTimers.main);
+          }
+          
+          return true;
+        } catch (error) {
+          console.error("Fehler beim Laden des Timer-Status:", error);
+        }
+      }
+    }
+    return false;
+  };
+  
+  // Challenge aktualisieren wenn sie sich ändert
   useEffect(() => {
     challengeRef.current = initialChallenge;
-
-    // Initialisiere Timer
+    
     if (initialChallenge) {
       console.log("Challenge geladen:", initialChallenge._id);
-
-      // Timer-Werte aus der Challenge übernehmen
-      setDisplayTimers({
-        main: initialChallenge.timer?.duration || 0,
-        games: Object.fromEntries(
-          initialChallenge.games.map((game, index) => [index, game.timer?.duration || 0])
-        )
+      
+      // Debug-Ausgabe zur Pausendauer
+      console.log("Pausendauer in Challenge:", {
+        pauseDuration: initialChallenge.pauseDuration
       });
-
-      // Status aus der Challenge übernehmen
-      setIsRunning(initialChallenge.timer?.isRunning || false);
-      setIsPaused(initialChallenge.paused || false);
-
-      const gameIndex = initialChallenge.games.findIndex(game => game.timer?.isRunning);
-      setActiveGameIndex(gameIndex !== -1 ? gameIndex : -1);
+      
+      // Versuche, gespeicherten Timer-Status zu laden
+      const loaded = loadTimerState();
+      
+      if (!loaded) {
+        // Wenn kein gespeicherter Status, initialisiere mit Challenge-Daten
+        // Timer-Status setzen
+        const timerRunning = initialChallenge.timer?.isRunning || false;
+        setIsRunning(timerRunning);
+        setIsPaused(initialChallenge.paused || false);
+        
+        // Lade die gespeicherte Pausendauer aus der Datenbank
+        if (initialChallenge.pauseDuration !== undefined) {
+          console.log("Pausendauer aus DB geladen:", initialChallenge.pauseDuration);
+          setTotalPauseDuration(initialChallenge.pauseDuration);
+        } else {
+          setTotalPauseDuration(0);
+        }
+        
+        // Aktives Spiel finden
+        const activeIdx = initialChallenge.games.findIndex(game => game.timer?.isRunning);
+        setActiveGameIndex(activeIdx >= 0 ? activeIdx : -1);
+        
+        // Initiale Timer-Werte setzen und Zeit seit letztem Zugriff berechnen
+        let initialTimers = {
+          main: initialChallenge.timer?.duration || 0,
+          games: {}
+        };
+        
+        // Wenn Timer läuft aber Seite war geschlossen, Zeit berechnen die vergangen ist
+        if (timerRunning && !initialChallenge.paused && initialChallenge.timer?.startTime) {
+          const startTime = new Date(initialChallenge.timer.startTime);
+          const now = new Date();
+          const elapsedSinceStart = now - startTime;
+          
+          console.log("Zeit seit Timer-Start:", {
+            startTime: startTime.toISOString(),
+            jetzt: now.toISOString(),
+            vergangeneZeit: elapsedSinceStart,
+            gespeicherteDauer: initialChallenge.timer?.duration || 0
+          });
+          
+          // Addiere vergangene Zeit zur gespeicherten Dauer
+          initialTimers.main += elapsedSinceStart;
+          
+          // Aktualisiere DB mit neuem Wert
+          updateMainTimer(initialTimers.main);
+        }
+        
+        // Spiel-Timer setzen
+        initialChallenge.games.forEach((game, index) => {
+          initialTimers.games[index] = game.timer?.duration || 0;
+          
+          // Wenn Spiel-Timer läuft, berechne verstrichene Zeit
+          if (game.timer?.isRunning && game.timer?.startTime && timerRunning && !initialChallenge.paused) {
+            const startTime = new Date(game.timer.startTime);
+            const now = new Date();
+            const elapsedSinceStart = now - startTime;
+            
+            // Addiere verstrichene Zeit
+            initialTimers.games[index] += elapsedSinceStart;
+          }
+        });
+        
+        setTimers(initialTimers);
+        
+        // Timer starten wenn nötig
+        if (timerRunning && !initialChallenge.paused) {
+          startTimeRef.current = Date.now();
+          startTimer();
+        }
+        
+        // Pausetimer starten, wenn im Pause-Modus
+        if (initialChallenge.paused) {
+          pauseStartTimeRef.current = Date.now();
+          
+          // Starte den Pausetimer
+          pauseTimerRef.current = setInterval(() => {
+            const elapsed = Date.now() - pauseStartTimeRef.current;
+            setCurrentPauseTimer(elapsed);
+          }, 100);
+        }
+      }
+      
+      // Erste Debug-Ausgabe
+      setTimeout(() => {
+        logTimers();
+      }, 500);
     }
   }, [initialChallenge?._id]);
-
-  // Timer-Interval starten
-  const startTimerInterval = useCallback(() => {
+  
+  // Timer-Status speichern wenn sich etwas ändert
+  useEffect(() => {
+    saveTimerState();
+  }, [timers, isRunning, isPaused, activeGameIndex, totalPauseDuration, currentPauseTimer]);
+  
+  // Timer starten (intern) - Angepasst für Tab-Wechsel
+  const startTimer = () => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
-
+    
+    // Aktuellen Timestamp speichern
+    const timerStartTs = Date.now();
+    const initialTimerValues = {...timers};
+    
+    console.log("Timer gestartet mit aktivem Spiel:", activeGameIndex);
+    
     timerRef.current = setInterval(() => {
-      setDisplayTimers(prev => {
-        const updated = { ...prev };
-        updated.main = (updated.main || 0) + 1000;
-
-        if (activeGameIndex !== -1) {
-          updated.games = { ...prev.games };
-          updated.games[activeGameIndex] = (updated.games[activeGameIndex] || 0) + 1000;
+      // Berechne, wie viel Zeit tatsächlich vergangen ist
+      const currentTs = Date.now();
+      const elapsedSinceStart = currentTs - timerStartTs;
+      
+      setTimers(prev => {
+        // Berechne die absoluten Werte basierend auf der tatsächlich verstrichenen Zeit
+        const updated = { 
+          main: initialTimerValues.main + elapsedSinceStart,
+          games: { ...initialTimerValues.games }
+        };
+        
+        // Aktives Spiel aktualisieren
+        if (activeGameIndex >= 0) {
+          const initialGameTime = initialTimerValues.games[activeGameIndex] || 0;
+          updated.games[activeGameIndex] = initialGameTime + elapsedSinceStart;
         }
-
+        
         return updated;
       });
-    }, 1000);
-
-    console.log("Timer-Interval gestartet");
-  }, [activeGameIndex]);
-
-  // Haupttimer-Interval
-  useEffect(() => {
-    if (isRunning) {
-      startTimerInterval();
-      return () => {
-        if (timerRef.current) {
-          clearInterval(timerRef.current);
-          timerRef.current = null;
+    }, 100);
+  };
+  
+  // Haupttimer-API aufrufen (für Challenge)
+  const updateMainTimer = async (duration) => {
+    if (!challengeRef.current?._id) return;
+    
+    try {
+      // Haupttimer separat aktualisieren
+      await fetch(`/api/challenges/${challengeRef.current._id}/mainTimer`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ duration }),
+      });
+    } catch (error) {
+      console.error("Fehler beim Aktualisieren des Haupttimers:", error);
+    }
+  };
+  
+  // Challenge starten
+  const startChallenge = async () => {
+    console.log("Challenge starten");
+    
+    // Lokale Timer starten
+    setIsRunning(true);
+    setIsPaused(false);
+    startTimeRef.current = Date.now();
+    startTimer();
+    
+    // Backend informieren wenn möglich
+    if (challengeRef.current?._id) {
+      try {
+        // Haupttimer starten via mainTimer API
+        await updateMainTimer(timers.main);
+        
+        // Status aktualisieren
+        await fetch(`/api/challenges/${challengeRef.current._id}/status`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            status: 'running',
+            timestamp: new Date().toISOString()
+          }),
+        });
+        
+        // Challenge aktualisieren
+        const response = await fetch(`/api/challenges/${challengeRef.current._id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setChallenge(data);
         }
-      };
-    } else if (timerRef.current) {
+      } catch (error) {
+        console.error("API-Fehler:", error);
+        // Frontend-Timer läuft trotzdem weiter
+      }
+    }
+  };
+  
+  // Challenge pausieren
+  const pauseChallenge = async () => {
+    if (!isRunning) return;
+    
+    console.log("Challenge pausieren");
+    
+    // Timer stoppen
+    setIsRunning(false);
+    setIsPaused(true);
+    
+    if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-  }, [isRunning, startTimerInterval]);
-
-  // Challenge starten
-  const startChallenge = useCallback(async () => {
-    if (!challengeRef.current) return;
-    const challenge = challengeRef.current;
-
-    // Prüfen, ob die Challenge aufgegeben oder abgeschlossen wurde
-    if (challenge.forfeited || challenge.completed) {
-      console.log("Challenge kann nicht gestartet werden:",
-                  challenge.forfeited ? "Aufgegeben" : "Abgeschlossen");
+    
+    // Pausenstart-Timestamp speichern
+    const pauseStartTime = Date.now();
+    pauseStartTimeRef.current = pauseStartTime;
+    
+    // Pausentimer zurücksetzen und neu starten
+    setCurrentPauseTimer(0);
+    
+    // Vorherigen Pause-Timer stoppen, falls vorhanden
+    if (pauseTimerRef.current) {
+      clearInterval(pauseTimerRef.current);
+    }
+    
+    // Neuen Pausetimer starten
+    pauseTimerRef.current = setInterval(() => {
+      const elapsed = Date.now() - pauseStartTime;
+      setCurrentPauseTimer(elapsed);
+    }, 100);
+    
+    // Diese Pause-Daten auch im localStorage speichern
+    saveTimerState();
+    
+    // Backend informieren wenn möglich
+    if (challengeRef.current?._id) {
+      try {
+        // Spieltimer stoppen
+        if (activeGameIndex >= 0) {
+          await fetch(`/api/challenges/${challengeRef.current._id}/timer`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              action: 'stop',
+              gameIndex: activeGameIndex
+            }),
+          });
+        }
+        
+        // Haupttimer aktualisieren (über mainTimer API)
+        await updateMainTimer(timers.main);
+        
+        // Status setzen
+        await fetch(`/api/challenges/${challengeRef.current._id}/status`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            status: 'paused',
+            timestamp: new Date().toISOString()
+          }),
+        });
+        
+        // Challenge aktualisieren
+        const response = await fetch(`/api/challenges/${challengeRef.current._id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setChallenge(data);
+        }
+      } catch (error) {
+        console.error("API-Fehler:", error);
+      }
+    }
+  };
+  
+  // Challenge fortsetzen
+  const resumeChallenge = async () => {
+    if (!isPaused) return;
+    
+    console.log("Challenge fortsetzen");
+    
+    // Aktuelle Pausendauer berechnen und zur Gesamtpausenzeit addieren
+    const pauseDuration = currentPauseTimer;
+    const newTotalPauseDuration = totalPauseDuration + pauseDuration;
+    setTotalPauseDuration(newTotalPauseDuration);
+    
+    console.log("Neue Gesamtpausendauer:", {
+      vorher: totalPauseDuration,
+      aktuellePause: pauseDuration,
+      neu: newTotalPauseDuration
+    });
+    
+    // Pausentimer stoppen
+    if (pauseTimerRef.current) {
+      clearInterval(pauseTimerRef.current);
+      pauseTimerRef.current = null;
+    }
+    
+    // Pausentimer zurücksetzen
+    setCurrentPauseTimer(0);
+    
+    // Timer wieder starten
+    setIsRunning(true);
+    setIsPaused(false);
+    startTimeRef.current = Date.now();
+    startTimer();
+    
+    // Backend informieren wenn möglich
+    if (challengeRef.current?._id) {
+      try {
+        // Pausendauer in der Datenbank speichern
+        try {
+          await fetch(`/api/challenges/${challengeRef.current._id}/pauseDuration`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pauseDuration: newTotalPauseDuration }),
+          });
+        } catch (pauseError) {
+          console.error("Fehler beim Speichern der Pausendauer:", pauseError);
+        }
+        
+        // Haupttimer aktualisieren (über mainTimer API)
+        await updateMainTimer(timers.main);
+        
+        // Status aktualisieren
+        await fetch(`/api/challenges/${challengeRef.current._id}/status`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            status: 'resumed',
+            timestamp: new Date().toISOString(),
+            pauseDuration: newTotalPauseDuration
+          }),
+        });
+        
+        // Challenge aktualisieren
+        const response = await fetch(`/api/challenges/${challengeRef.current._id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setChallenge(data);
+          
+          // Wenn vorher ein Spiel aktiv war, wieder aktivieren
+          if (activeGameIndex >= 0) {
+            selectGame(activeGameIndex);
+          }
+        }
+      } catch (error) {
+        console.error("API-Fehler:", error);
+      }
+    }
+  };
+  
+  // Spiel auswählen
+  const selectGame = async (index) => {
+    console.log(`Spiel ${index} auswählen`);
+    
+    // Wenn Timer nicht läuft, starten
+    if (!isRunning && !isPaused) {
+      await startChallenge();
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+    
+    // Wenn pausiert, Auswahl nicht ändern
+    if (isPaused) {
+      console.log("Challenge ist pausiert, Spiel kann nicht gewechselt werden");
       return;
     }
-
-    try {
-      console.log("Challenge starten:", challenge._id);
-
-      // API aufrufen
-      await fetch(`/api/challenges/${challenge._id}/timer`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'start' }),
-      });
-
-      // UI-Zustand aktualisieren
-      setIsRunning(true);
-
-      // Challenge aktualisieren
-      setChallenge(prev => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          timer: {
-            ...prev.timer,
-            isRunning: true
-          }
+  
+    // Timer-Intervall zuerst stoppen, bevor wir die Spielwechsel machen
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    
+    // Vorheriges Spiel merken
+    const previousGameIndex = activeGameIndex;
+    
+    // Neuen Spielindex setzen
+    setActiveGameIndex(index);
+    
+    // Hier ist die wichtige Änderung: Wir aktualisieren den Timer-Intervall manuell
+    // und starten ihn neu, BEVOR wir die API-Calls machen
+    timerRef.current = setInterval(() => {
+      setTimers(prev => {
+        // Kopie erstellen
+        const updated = { 
+          main: prev.main + 100,
+          games: { ...prev.games }
         };
-      });
-    } catch (error) {
-      console.error('Fehler beim Starten der Challenge:', error);
-    }
-  }, [setChallenge]);
-
-  // Startchallenge-Ref aktualisieren
-  useEffect(() => {
-    startChallengeRef.current = startChallenge;
-  }, [startChallenge]);
-
-  // Challenge pausieren
-  const pauseChallenge = useCallback(async () => {
-    if (!challengeRef.current || !isRunning) return;
-    const challenge = challengeRef.current;
-
-    try {
-      console.log("Challenge pausieren:", challenge._id);
-
-      // Aktuelle Timer-Werte speichern
-      const currentMain = displayTimers.main;
-      const currentGameTime = activeGameIndex !== -1 ? displayTimers.games[activeGameIndex] || 0 : 0;
-
-      // Timer-Interval stoppen
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-
-      // UI-Zustand aktualisieren
-      setIsRunning(false);
-      setIsPaused(true);
-      setPauseStartTime(Date.now());
-
-      // Startet den Pause-Timer
-      if (pauseTimerRef.current) {
-        clearInterval(pauseTimerRef.current);
-      }
-
-      pauseTimerRef.current = setInterval(() => {
-        setPauseDuration(prev => prev + 1000);
-      }, 1000);
-
-      const prevActiveIndex = activeGameIndex;
-
-      // Erst Spiel stoppen (falls aktiv)
-      if (prevActiveIndex !== -1) {
-        await fetch(`/api/challenges/${challenge._id}/timer`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'stop',
-            gameIndex: prevActiveIndex,
-            duration: currentGameTime
-          }),
-        });
-      }
-
-      // Dann Challenge stoppen
-      await fetch(`/api/challenges/${challenge._id}/timer`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'stop',
-          duration: currentMain
-        }),
-      });
-
-      // Timer-Wert sichern
-      await fetch(`/api/challenges/${challenge._id}/mainTimer`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          duration: currentMain
-        }),
-      });
-
-      // Als pausiert markieren
-      await fetch(`/api/challenges/${challenge._id}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: 'paused',
-          timestamp: new Date().toISOString()
-        }),
-      });
-
-      // Challenge neu laden
-      const refreshResponse = await fetch(`/api/challenges/${challenge._id}`);
-      const refreshedData = await refreshResponse.json();
-
-      // Timer-Werte manuell setzen
-      const updatedChallenge = {
-        ...refreshedData,
-        timer: {
-          ...refreshedData.timer,
-          duration: currentMain
-        },
-        paused: true,
-        pausedAt: new Date().toISOString()
-      };
-
-      setChallenge(updatedChallenge);
-
-      // Display-Timer aktualisieren
-      setDisplayTimers(prev => ({
-        main: currentMain,
-        games: { ...prev.games }
-      }));
-    } catch (error) {
-      console.error('Fehler beim Pausieren der Challenge:', error);
-    }
-  }, [isRunning, activeGameIndex, displayTimers, setChallenge]);
-
-  // PauseChallenge-Ref aktualisieren
-  useEffect(() => {
-    pauseChallengeRef.current = pauseChallenge;
-  }, [pauseChallenge]);
-
-  // Challenge fortsetzen
-  const resumeChallenge = useCallback(async () => {
-    if (!challengeRef.current || !isPaused) return;
-    const challenge = challengeRef.current;
-
-    try {
-      console.log("Challenge fortsetzen:", challenge._id);
-
-      // Pause-Timer stoppen
-      if (pauseTimerRef.current) {
-        clearInterval(pauseTimerRef.current);
-        pauseTimerRef.current = null;
-      }
-
-      // Pause-Daten zurücksetzen
-      setPauseStartTime(null);
-      const finalPauseDuration = pauseDuration;
-      setPauseDuration(0);
-
-      // API aufrufen
-      await fetch(`/api/challenges/${challenge._id}/timer`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'start' }),
-      });
-
-      // Als fortgesetzt markieren
-      await fetch(`/api/challenges/${challenge._id}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: 'resumed',
-          timestamp: new Date().toISOString(),
-          pauseDuration: finalPauseDuration
-        }),
-      });
-
-      // UI-Zustand aktualisieren
-      setIsRunning(true);
-      setIsPaused(false);
-
-      // Timer explizit hier neu starten
-      startTimerInterval();
-
-      // Challenge aktualisieren
-      setChallenge(prev => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          timer: {
-            ...prev.timer,
-            isRunning: true
-          },
-          paused: false,
-          pausedAt: null,
-          totalPauseDuration: (prev.totalPauseDuration || 0) + finalPauseDuration
-        };
-      });
-
-      // Wenn vorher ein Spiel aktiv war, dieses wieder aktivieren
-      const prevActiveIndex = activeGameIndex;
-      if (prevActiveIndex !== -1 && selectGameRef.current) {
-        setTimeout(() => {
-          selectGameRef.current(prevActiveIndex);
-        }, 300);
-      }
-    } catch (error) {
-      console.error('Fehler beim Fortsetzen der Challenge:', error);
-    }
-  }, [isPaused, pauseDuration, pauseStartTime, activeGameIndex, startTimerInterval, setChallenge]);
-
-  // ResumeChallenge-Ref aktualisieren
-  useEffect(() => {
-    resumeChallengeRef.current = resumeChallenge;
-  }, [resumeChallenge]);
-
-  // Spiel auswählen
-  const selectGame = useCallback(async (index) => {
-    if (!challengeRef.current) return;
-    const challenge = challengeRef.current;
-
-    // Prüfe, ob das Spiel bereits abgeschlossen ist
-    if (challenge.games[index].completed) return;
-
-    try {
-      console.log("Spiel auswählen:", index, "Timer läuft:", isRunning);
-
-      // Wenn Timer nicht läuft und nicht pausiert ist, starten
-      if (!isRunning && !isPaused && startChallengeRef.current) {
-        await startChallengeRef.current();
-
-        // Warte einen Moment
-        await new Promise(resolve => setTimeout(resolve, 300));
-      }
-
-      // Aktuelle Timer-Werte speichern
-      const currentTimers = { ...displayTimers };
-
-      // Stoppt das aktuelle Spiel, wenn ein anderes aktiv ist
-      if (activeGameIndex !== -1 && activeGameIndex !== index) {
-        console.log("Stoppe aktives Spiel:", activeGameIndex);
-
-        await fetch(`/api/challenges/${challenge._id}/timer`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'stop',
-            gameIndex: activeGameIndex,
-            duration: currentTimers.games[activeGameIndex] || 0
-          }),
-        });
-
-        // Haupttimer-Zeit beibehalten
-        await fetch(`/api/challenges/${challenge._id}/mainTimer`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            duration: currentTimers.main
-          }),
-        });
-      }
-
-      // Neues Spiel starten
-      console.log("Starte neues Spiel:", index);
-
-      await fetch(`/api/challenges/${challenge._id}/timer`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'start', gameIndex: index }),
-      });
-
-      // UI-Zustand aktualisieren
-      setActiveGameIndex(index);
-
-      // UI aktualisieren
-      setChallenge(prev => {
-        if (!prev) return prev;
-
-        const updated = { ...prev };
-        updated.games = [...prev.games];
-
-        // Vorheriges Spiel deaktivieren
-        if (activeGameIndex !== -1 && activeGameIndex !== index) {
-          const prevGame = updated.games[activeGameIndex];
-          if (prevGame) {
-            if (!prevGame.timer) prevGame.timer = {};
-            prevGame.timer.isRunning = false;
-            prevGame.timer.duration = currentTimers.games[activeGameIndex] || 0;
-          }
+        
+        // WICHTIG: Nur das AKTUELLE Spiel (index) aktualisieren, nicht das vorherige!
+        if (updated.games[index] === undefined) {
+          updated.games[index] = 0;
         }
-
-        // Neues Spiel aktivieren
-        const newGame = updated.games[index];
-        if (newGame) {
-          if (!newGame.timer) newGame.timer = {};
-          newGame.timer.isRunning = true;
-        }
-
-        // Haupttimer-Zeit beibehalten
-        if (!updated.timer) updated.timer = {};
-        updated.timer.duration = currentTimers.main;
-
+        
+        // Nur das aktuelle Spiel inkrementieren
+        updated.games[index] += 100;
+        
         return updated;
       });
-    } catch (error) {
-      console.error('Fehler beim Auswählen des Spiels:', error);
+    }, 100);
+    
+    // API-Aufrufe machen
+    if (challengeRef.current?._id) {
+      try {
+        // Altes Spiel stoppen (über timer API)
+        if (previousGameIndex >= 0) {
+          await fetch(`/api/challenges/${challengeRef.current._id}/timer`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              action: 'stop',
+              gameIndex: previousGameIndex
+            }),
+          });
+        }
+        
+        // Neues Spiel starten (über timer API)
+        await fetch(`/api/challenges/${challengeRef.current._id}/timer`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            action: 'start', 
+            gameIndex: index 
+          }),
+        });
+        
+        // Haupttimer aktualisieren (über mainTimer API)
+        await updateMainTimer(timers.main);
+        
+        // Challenge aktualisieren
+        const response = await fetch(`/api/challenges/${challengeRef.current._id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setChallenge(data);
+        }
+      } catch (error) {
+        console.error("API-Fehler:", error);
+      }
     }
-  }, [isRunning, isPaused, activeGameIndex, displayTimers, setChallenge]);
-
-  // SelectGame-Ref aktualisieren
-  useEffect(() => {
-    selectGameRef.current = selectGame;
-  }, [selectGame]);
-
+    
+    // Debug-Ausgabe nach dem Wechsel
+    setTimeout(() => {
+      logTimers();
+    }, 500);
+  };
+  
   // Siege erhöhen
-  const incrementWin = useCallback(async (gameIndex) => {
-    if (!challengeRef.current || !isRunning) return;
-    const challenge = challengeRef.current;
-
+  const incrementWin = async (gameIndex) => {
+    console.log(`Sieg für Spiel ${gameIndex} erhöhen`);
+    
+    if (!challengeRef.current?._id) return;
+    
     try {
-      console.log("Sieg erhöhen für Spiel:", gameIndex);
-
-      // Aktuelle Timer-Werte speichern
-      const currentTimers = { ...displayTimers };
-
-      // API aufrufen
-      const response = await fetch(`/api/challenges/${challenge._id}/wins`, {
+      // Haupttimer aktualisieren bevor API-Aufruf
+      await updateMainTimer(timers.main);
+      
+      const response = await fetch(`/api/challenges/${challengeRef.current._id}/wins`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ gameIndex, action: 'increment' }),
       });
-
+      
       if (!response.ok) {
-        throw new Error('Fehler beim Aktualisieren der Siege');
+        throw new Error("Fehler beim Erhöhen der Siege");
       }
-
-      // Haupttimer-Zeit beibehalten
-      await fetch(`/api/challenges/${challenge._id}/mainTimer`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          duration: currentTimers.main
-        }),
-      });
-
-      // ENTFERNT: Die lokale UI-Aktualisierung vor der Server-Antwort
-
-      // Challenge neu laden
-      const refreshResponse = await fetch(`/api/challenges/${challenge._id}`);
+      
+      // Challenge aktualisieren
+      const refreshResponse = await fetch(`/api/challenges/${challengeRef.current._id}`);
       if (refreshResponse.ok) {
-        const refreshedData = await refreshResponse.json();
-
-        // Überprüfe, ob das Spiel jetzt komplett ist
-        const game = refreshedData.games[gameIndex];
-
-        // Aktualisiere Challenge, behalte aber Timer-Werte
-        setChallenge({
-          ...refreshedData,
-          timer: {
-            ...refreshedData.timer,
-            duration: currentTimers.main
-          }
-        });
-
+        const data = await refreshResponse.json();
+        setChallenge(data);
+        
+        // Prüfen ob Spiel abgeschlossen ist
+        const game = data.games[gameIndex];
+        
         if (game.completed && gameIndex === activeGameIndex) {
-          // Finde das nächste nicht abgeschlossene Spiel
-          const nextIndex = refreshedData.games.findIndex((g, idx) =>
+          // Nächstes nicht abgeschlossenes Spiel finden
+          const nextIndex = data.games.findIndex((g, idx) => 
             idx !== gameIndex && !g.completed
           );
-
-          if (nextIndex !== -1 && selectGameRef.current) {
-            await selectGameRef.current(nextIndex);
+          
+          if (nextIndex >= 0) {
+            // Zum nächsten Spiel wechseln
+            await selectGame(nextIndex);
           } else {
-            // Timer-Interval sofort stoppen
+            // Alle Spiele abgeschlossen
+            console.log("Alle Spiele abgeschlossen");
+            
+            // Timer stoppen
             if (timerRef.current) {
               clearInterval(timerRef.current);
               timerRef.current = null;
             }
-
-            // UI-Zustand aktualisieren
+            
+            // Status aktualisieren
             setIsRunning(false);
             setIsPaused(false);
-
-            // Timer in der DB stoppen, aber ohne in den pausierten Zustand zu wechseln
-            await fetch(`/api/challenges/${challenge._id}/timer`, {
+            
+            // Spieltimer stoppen
+            await fetch(`/api/challenges/${challengeRef.current._id}/timer`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
+              body: JSON.stringify({ 
                 action: 'stop',
-                duration: currentTimers.main
+                gameIndex: activeGameIndex 
               }),
             });
-
-            // Als abgeschlossen markieren
-            await fetch(`/api/challenges/${challenge._id}/status`, {
+            
+            // Haupttimer aktualisieren
+            await updateMainTimer(timers.main);
+            
+            // Status aktualisieren
+            await fetch(`/api/challenges/${challengeRef.current._id}/status`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
+              body: JSON.stringify({ 
                 status: 'completed',
                 timestamp: new Date().toISOString()
               }),
             });
-
-            // Aktualisierte Daten laden
-            const finalResponse = await fetch(`/api/challenges/${challenge._id}`);
-            const finalData = await finalResponse.json();
-
-            setChallenge({
-              ...finalData,
-              timer: {
-                ...finalData.timer,
-                isRunning: false,
-                duration: currentTimers.main
-              },
-              paused: false,
-              completed: true
-            });
+            
+            // Challenge aktualisieren
+            const finalResponse = await fetch(`/api/challenges/${challengeRef.current._id}`);
+            if (finalResponse.ok) {
+              const finalData = await finalResponse.json();
+              setChallenge(finalData);
+            }
           }
         }
       }
     } catch (error) {
-      console.error('Fehler beim Erhöhen der Siege:', error);
+      console.error("Fehler beim Erhöhen der Siege:", error);
     }
-  }, [isRunning, activeGameIndex, displayTimers, setChallenge]);
-
-  // IncrementWin-Ref aktualisieren
-  useEffect(() => {
-    incrementWinRef.current = incrementWin;
-  }, [incrementWin]);
-
+  };
+  
   // Spiel zurücksetzen
-  const resetGame = useCallback(async (gameIndex) => {
-    if (!challengeRef.current || isRunning) return;
-    const challenge = challengeRef.current;
-
+  const resetGame = async (gameIndex) => {
+    if (!challengeRef.current?._id || isRunning) return;
+    
+    console.log(`Spiel ${gameIndex} zurücksetzen`);
+    
     try {
-      console.log("Spiel zurücksetzen:", gameIndex);
-
-      const response = await fetch(`/api/challenges/${challenge._id}/wins`, {
+      // Haupttimer aktualisieren bevor API-Aufruf
+      await updateMainTimer(timers.main);
+      
+      const response = await fetch(`/api/challenges/${challengeRef.current._id}/wins`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ gameIndex, action: 'reset' }),
       });
-
+      
       if (!response.ok) {
-        throw new Error('Fehler beim Zurücksetzen des Spiels');
+        throw new Error("Fehler beim Zurücksetzen des Spiels");
       }
-
-      // Challenge neu laden
-      const refreshResponse = await fetch(`/api/challenges/${challenge._id}`);
+      
+      // Challenge aktualisieren
+      const refreshResponse = await fetch(`/api/challenges/${challengeRef.current._id}`);
       if (refreshResponse.ok) {
-        const refreshedData = await refreshResponse.json();
-
-        // Timer-Werte beibehalten
-        const currentMain = displayTimers.main;
-
-        setChallenge({
-          ...refreshedData,
-          timer: {
-            ...refreshedData.timer,
-            duration: currentMain
-          }
-        });
-
-        // Timer für dieses Spiel zurücksetzen
-        setDisplayTimers(prev => {
-          const updated = { ...prev };
-          updated.games = { ...prev.games };
-          updated.games[gameIndex] = 0;
-          return updated;
-        });
+        const data = await refreshResponse.json();
+        setChallenge(data);
       }
     } catch (error) {
-      console.error('Fehler beim Zurücksetzen des Spiels:', error);
+      console.error("Fehler beim Zurücksetzen des Spiels:", error);
     }
-  }, [isRunning, displayTimers, setChallenge]);
-
-  // ResetGame-Ref aktualisieren
-  useEffect(() => {
-    resetGameRef.current = resetGame;
-  }, [resetGame]);
-
+  };
+  
   // Challenge aufgeben
-  const forfeitChallenge = useCallback(async () => {
-    if (!challengeRef.current || !isRunning) return;
-    const challenge = challengeRef.current;
-
+  const forfeitChallenge = async () => {
+    if (!challengeRef.current?._id) return;
+    
+    console.log("Challenge aufgeben");
+    
+    // Timer stoppen
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    
+    if (pauseTimerRef.current) {
+      clearInterval(pauseTimerRef.current);
+      pauseTimerRef.current = null;
+    }
+    
+    // Status aktualisieren
+    setIsRunning(false);
+    setIsPaused(false);
+    
     try {
-      console.log("Challenge aufgeben");
-
-      // Aktuelle Timer-Werte speichern
-      const currentTimers = { ...displayTimers };
-
-      // Timer-Interval sofort stoppen
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
+      // Spieltimer stoppen (falls aktiv)
+      if (activeGameIndex >= 0) {
+        await fetch(`/api/challenges/${challengeRef.current._id}/timer`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            action: 'stop',
+            gameIndex: activeGameIndex 
+          }),
+        });
       }
-
-      // Pause-Timer stoppen falls aktiv
-      if (pauseTimerRef.current) {
-        clearInterval(pauseTimerRef.current);
-        pauseTimerRef.current = null;
-      }
-
-      // UI-Zustand aktualisieren
-      setIsRunning(false);
-      setIsPaused(false);  // Wichtig: Sicherstellen, dass isPaused auch auf false gesetzt wird
-      setPauseDuration(0); // Pausendauer zurücksetzen
-
-      // Timer in der DB stoppen, ohne in den pausierten Zustand zu wechseln
-      await fetch(`/api/challenges/${challenge._id}/timer`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'stop',
-          duration: currentTimers.main
-        }),
-      });
-
+      
+      // Haupttimer aktualisieren
+      await updateMainTimer(timers.main);
+      
       // Als aufgegeben markieren
-      await fetch(`/api/challenges/${challenge._id}/status`, {
+      await fetch(`/api/challenges/${challengeRef.current._id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: JSON.stringify({ 
           status: 'forfeited',
           timestamp: new Date().toISOString()
         }),
       });
-
-      // Challenge neu laden
-      const refreshResponse = await fetch(`/api/challenges/${challenge._id}`);
-      const refreshedData = await refreshResponse.json();
-
-      // Timer-Werte beibehalten
-      setChallenge({
-        ...refreshedData,
-        timer: {
-          ...refreshedData.timer,
-          isRunning: false,
-          duration: currentTimers.main
-        },
-        paused: false,   // Explizit auf nicht pausiert setzen
-        forfeited: true  // Challenge explizit als aufgegeben markieren
-      });
-
-      // Zurück zum Dashboard navigieren
-      //router.push('/dashboard');
+      
+      // Challenge aktualisieren
+      const response = await fetch(`/api/challenges/${challengeRef.current._id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setChallenge(data);
+      }
+      
+      // Gespeicherten Timer-Status löschen
+      localStorage.removeItem(`timer_state_${challengeRef.current._id}`);
+      
+      // Zum Dashboard navigieren
+      router.push('/dashboard');
     } catch (error) {
-      console.error('Fehler beim Aufgeben der Challenge:', error);
+      console.error("Fehler beim Aufgeben der Challenge:", error);
     }
-  }, [isRunning, displayTimers, router]);
-
-  // ForfeitChallenge-Ref aktualisieren
-  useEffect(() => {
-    forfeitChallengeRef.current = forfeitChallenge;
-  }, [forfeitChallenge]);
-
-  // Cleanup-Funktion für alle Timer
+  };
+  
+  // Cleanup
   useEffect(() => {
     return () => {
       if (timerRef.current) {
@@ -676,13 +806,18 @@ export function useActiveChallenge(initialChallenge, setChallenge) {
       }
     };
   }, []);
-
+  
+  // Berechne die angezeigte Pausendauer (gesamt + aktuell)
+  const displayedPauseDuration = totalPauseDuration + currentPauseTimer;
+  
   return {
     isRunning,
     activeGameIndex,
     isPaused,
-    pauseDuration,
-    timers: displayTimers,
+    pauseDuration: displayedPauseDuration, // ← Hier die berechnete Pausendauer zurückgeben
+    totalPauseDuration,
+    currentPauseTimer,
+    timers,
     startChallenge,
     pauseChallenge,
     resumeChallenge,

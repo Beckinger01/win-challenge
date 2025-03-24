@@ -25,16 +25,20 @@ const ChallengeDetailPage = () => {
     isRunning,
     activeGameIndex,
     isPaused,
-    pauseDuration,
+    totalPauseDuration,  // Geändert: Lade die Gesamtpausendauer
+    currentPauseTimer,   // Neu: Aktuelle Pausendauer
     timers,
     startChallenge,
-    pauseChallenge,  // Umbenannt von stopChallenge
-    resumeChallenge, // Neu
+    pauseChallenge,
+    resumeChallenge,
     selectGame,
     incrementWin,
     resetGame,
     forfeitChallenge
   } = useActiveChallenge(challenge, setChallenge);
+  
+  // Berechne die Gesamtpausendauer (gespeichert + aktuell)
+  const displayedPauseDuration = totalPauseDuration + currentPauseTimer;
 
   useEffect(() => {
     const fetchChallenge = async () => {
@@ -173,12 +177,12 @@ const ChallengeDetailPage = () => {
         <ActiveChallengeControls
           isRunning={isRunning}
           isPaused={isPaused}
-          pauseDuration={pauseDuration}
+          pauseDuration={displayedPauseDuration} // Geändert: Verwende berechnete Gesamtpausendauer
           isCompleted={challenge.completed}
           isForfeited={challenge.forfeited}
           onStart={startChallenge}
-          onPause={pauseChallenge}   // Umbenannt von onStop
-          onResume={resumeChallenge} // Neu
+          onPause={pauseChallenge}
+          onResume={resumeChallenge}
           onForfeit={forfeitChallenge}
         />
 
@@ -212,7 +216,7 @@ const ChallengeDetailPage = () => {
     <h2 className="text-yellow-400 text-xl font-semibold mb-3">Challenge pausiert</h2>
     <div className="text-gray-300">
       <p>Die Challenge wurde am {formatDate(challenge.pausedAt)} pausiert.</p>
-      <p className="mt-2">Pausendauer: {formatTime(pauseDuration)}</p>
+      <p className="mt-2">Pausendauer: {formatTime(displayedPauseDuration)}</p> {/* Geändert: Verwende berechnete Gesamtpausendauer */}
       <button
         onClick={resumeChallenge}
         className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"

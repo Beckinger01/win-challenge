@@ -80,6 +80,14 @@ const ChallengeSchema = new Schema({
     type: Boolean,
     default: false
   },
+  paused: {
+    type: Boolean,
+    default: false
+  },
+  forfeited: {
+    type: Boolean,
+    default: false
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -93,7 +101,6 @@ const ChallengeSchema = new Schema({
     default: () => ({})
   }
 });
-
 
 const Challenge = models.Challenge || model("Challenge", ChallengeSchema);
 

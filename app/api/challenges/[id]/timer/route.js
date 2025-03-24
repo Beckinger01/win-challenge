@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { connectToDB } from "@/utils/database";
+import { publishChallengeUpdate } from '@/utils/eventPublisher';
 import mongoose from "mongoose";
 
 export async function PUT(request, { params }) {
@@ -113,6 +114,12 @@ export async function PUT(request, { params }) {
     
     // Logge das Ergebnis
     console.log("Timer Update Ergebnis:", result.value ? "Erfolgreich" : "Fehlgeschlagen");
+
+    const updatedChallenge = await challengesCollection.findOne({
+      _id: new ObjectId(id)
+    });
+
+    publishChallengeUpdate(id, updatedChallenge);
     
     return NextResponse.json(result.value || result);
   } catch (error) {

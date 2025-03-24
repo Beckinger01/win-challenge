@@ -474,6 +474,19 @@ export function useActiveChallenge(initialChallenge, setChallenge) {
     // Backend informieren wenn möglich
     if (challengeRef.current?._id) {
       try {
+        // WICHTIG: Reihenfolge der API-Aufrufe ändern - erst Status, dann Timer
+        
+        // Status aktualisieren - das muss zuerst erfolgen, um den Paused-Status zu ändern
+        await fetch(`/api/challenges/${challengeRef.current._id}/status`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            status: 'resumed',
+            timestamp: new Date().toISOString(),
+            pauseDuration: newTotalPauseDuration
+          }),
+        });
+        
         // Pausendauer in der Datenbank speichern
         try {
           await fetch(`/api/challenges/${challengeRef.current._id}/pauseDuration`, {
@@ -488,16 +501,8 @@ export function useActiveChallenge(initialChallenge, setChallenge) {
         // Haupttimer aktualisieren (über mainTimer API)
         await updateMainTimer(timers.main);
         
-        // Status aktualisieren
-        await fetch(`/api/challenges/${challengeRef.current._id}/status`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            status: 'resumed',
-            timestamp: new Date().toISOString(),
-            pauseDuration: newTotalPauseDuration
-          }),
-        });
+        // Kleine Pause, damit alle Aktualisierungen wirksam werden
+        await new Promise(resolve => setTimeout(resolve, 100));
         
         // Challenge aktualisieren
         const response = await fetch(`/api/challenges/${challengeRef.current._id}`);

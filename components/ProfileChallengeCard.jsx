@@ -16,44 +16,82 @@ const formatTime = (duration) => {
 };
 
 const formatDate = (dateString) => {
-    if (!dateString) return "–";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("de-DE", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  };
+  if (!dateString) return "–";
+  const date = new Date(dateString);
+  return date.toLocaleDateString("de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};
 
-const ProfileChallengeCard = ({name, timer = {}, id, startDate, type, gameCount }) => {
+const ProfileChallengeCard = ({ name, timer = {}, id, startDate, type, gameCount, isActive }) => {
   // Berechne die formatierte Zeit
   const formattedTime = formatTime(timer.duration);
   const formattedDate = formatDate(startDate);
 
+  const handleCardClick = (e) => {
+    // Verhindern, dass der Event-Handler ausgelöst wird, wenn auf einen der unteren Buttons geklickt wird
+    if (e.target.closest('.action-buttons')) {
+      e.stopPropagation();
+      return;
+    }
+
+    // Sonst zur Challenge-View navigieren
+    window.location.href = `/challenge-view/${id}`;
+  };
+
   return (
-    <Link href={`/challenge-view/${id}`} className="block">
-      <div className="bg-gray-800 rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow duration-300 border border-[#a6916e] hover:border-blue-600">
-        <h3 className="text-white text-4xl font-semibold mb-3 text-center">{name}</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-y-10">
-          <div className="text-center text-white text-1xl font-semibold">
-            Typ: {type}
-          </div>
-          <div className="text-center text-white text-1xl font-semibold">
-            Am: {formattedDate}
-          </div>
-          <div className="text-center primary-text-gradient text-3xl font-semibold">
-            {formattedTime}
-          </div>
-          <div className="text-center primary-text-gradient text-3xl font-semibold">
-            {gameCount == 1 ? (
-              `${gameCount} Spiel`
-            ) : (
-              `${gameCount} Spiele`
-            )}
-          </div>
+    <div
+      onClick={handleCardClick}
+      className={`relative cursor-pointer bg-gray-800 rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow duration-300 border ${isActive ? 'border-green-500 border-2' : 'border-[#a6916e]'} hover:border-blue-600`}
+    >
+      {/* Status-Badge für aktive Challenges */}
+      {isActive && (
+        <div className="absolute top-0 right-0 bg-green-500 text-white px-2 py-1 text-xs flex items-center rounded-bl-lg z-10">
+          <span className="inline-block w-2 h-2 bg-white rounded-full mr-1 animate-pulse"></span>
+          Live
+        </div>
+      )}
+
+      <h3 className="text-white text-4xl font-semibold mb-3 text-center">{name}</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-y-10">
+        <div className="text-center text-white text-1xl font-semibold">
+          Typ: {type}
+        </div>
+        <div className="text-center text-white text-1xl font-semibold">
+          Am: {formattedDate}
+        </div>
+        <div className="text-center primary-text-gradient text-3xl font-semibold">
+          {formattedTime}
+        </div>
+        <div className="text-center primary-text-gradient text-3xl font-semibold">
+          {gameCount == 1 ? (
+            `${gameCount} Spiel`
+          ) : (
+            `${gameCount} Spiele`
+          )}
         </div>
       </div>
-    </Link>
+
+      {/* Separate Buttons-Sektion, die das Event nicht propagiert */}
+      <div className="action-buttons flex justify-center gap-3 mt-6" onClick={(e) => e.stopPropagation()}>
+        <Link
+          href={`/challenge/${id}`}
+          className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium"
+        >
+          Controller
+        </Link>
+        <Link
+          href={`/challenge/public/${id}`}
+          className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-sm font-medium"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Zuschauer
+        </Link>
+      </div>
+    </div>
   );
 };
 

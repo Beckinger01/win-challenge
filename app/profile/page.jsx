@@ -53,31 +53,64 @@ const Profile = () => {
       </div>
 
       {loading ? (
-        <h1 className="text-white w-full text-center text-3xl">Challenges werden geladen...</h1>
-      ) : error ? (
-        <p className="text-red-500">{error}</p>
-      ) : challenges.length > 0 ? (
+  <h1 className="text-white w-full text-center text-3xl">Challenges werden geladen...</h1>
+) : error ? (
+  <p className="text-red-500">{error}</p>
+) : challenges.length > 0 ? (
+  <>
+    {/* Aktive Challenges Sektion */}
+    {challenges.some(challenge => !challenge.completed && (challenge.timer?.isRunning || challenge.games.some(game => game.timer?.isRunning))) && (
+      <div className="mb-8">
+        <h2 className="text-white text-3xl font-semibold mb-6 flex items-center">
+          <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2 animate-pulse"></span>
+          Aktive Challenges
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {challenges.map((challenge) => (
-            <ProfileChallengeCard
-              key={challenge._id}
-              id={challenge._id}
-              name={challenge.name}
-              timer={challenge.timer}
-              startDate={challenge.createdAt}
-              type={challenge.type}
-              gameCount={challenge.games.length}
-            />
-          ))}
+          {challenges
+            .filter(challenge => !challenge.completed && (challenge.timer?.isRunning || challenge.games.some(game => game.timer?.isRunning)))
+            .map((challenge) => (
+              <ProfileChallengeCard
+                key={challenge._id}
+                id={challenge._id}
+                name={challenge.name}
+                timer={challenge.timer}
+                startDate={challenge.createdAt}
+                type={challenge.type}
+                gameCount={challenge.games.length}
+                isActive={true}
+              />
+            ))}
         </div>
-      ) : (
-        <p className="text-white">Du hast noch keine Challenges erstellt.</p>
-      )}
-
-      <div className="mt-8 mb-4 text-center">
-        <h2 className="text-white text-4xl pb-4 font-semibold border-b-4 border-[#a6916e]">Einstellungen</h2>
       </div>
-      <Settings />
+    )}
+
+    {/* Alle Challenges Sektion */}
+    <div>
+      <h2 className="text-white text-3xl font-semibold mb-6 border-b-2 border-[#a6916e] pb-2">Alle Challenges</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {challenges.map((challenge) => (
+          <ProfileChallengeCard
+            key={challenge._id}
+            id={challenge._id}
+            name={challenge.name}
+            timer={challenge.timer}
+            startDate={challenge.createdAt}
+            type={challenge.type}
+            gameCount={challenge.games.length}
+            isActive={!challenge.completed && (challenge.timer?.isRunning || challenge.games.some(game => game.timer?.isRunning))}
+          />
+        ))}
+      </div>
+    </div>
+  </>
+) : (
+  <p className="text-white">Du hast noch keine Challenges erstellt.</p>
+)}
+
+<div className="mt-8 mb-4 text-center">
+  <h2 className="text-white text-4xl pb-4 font-semibold border-b-4 border-[#a6916e]">Einstellungen</h2>
+</div>
+<Settings />
     </section>
   );
 };

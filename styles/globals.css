@@ -24,6 +24,92 @@ body {
 
 }
 
+@keyframes pulse-border {
+  0% {
+    box-shadow: 0 0 0 0 rgba(166, 145, 110, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(166, 145, 110, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(166, 145, 110, 0);
+  }
+}
+
+.game-card-active {
+  animation: pulse-border 2s infinite;
+}
+
+/* Smooth transitions für alle Elemente */
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 500ms;
+}
+
+/* Hover Effekt für Buttons */
+.hover-glow:hover {
+  box-shadow: 0 0 10px rgba(166, 145, 110, 0.5);
+}
+
+/* Progressbar Animation */
+@keyframes progress-fill {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+.animate-progress {
+  animation: progress-fill 0.5s ease-in-out;
+}
+
+/* Smooth loading animation */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Background pattern */
+.bg-pattern {
+  background-color: #0a0a0a;
+  background-image: radial-gradient(#1a1a1a 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Für bessere Card-Übergänge */
+.card-appear {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: cardAppear 0.3s forwards;
+}
+
+@keyframes cardAppear {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Aktiven und inaktiven Status visuell deutlicher unterscheiden */
+.status-active {
+  position: relative;
+  overflow: hidden;
+}
+
+.status-active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, rgba(166, 145, 110, 0.1), transparent);
+  z-index: -1;
+}
+
 .primary-text {
   @apply text-[#c4af88]
 }

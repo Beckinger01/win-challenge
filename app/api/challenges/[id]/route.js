@@ -1,4 +1,3 @@
-// app/api/challenges/[id]/route.js
 import { connectToDB } from '@/utils/database';
 import Challenge from '@/models/challenge';
 import User from '@/models/user';
@@ -6,7 +5,6 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { NextResponse } from 'next/server';
 
-// GET a specific challenge
 export async function GET(request, context) {
   const { id } = await context.params;
 
@@ -32,14 +30,12 @@ export async function GET(request, context) {
   }
 }
 
-// PUT update a challenge
 export async function PUT(request, context) {
   const { id } = await context.params;
 
   try {
     await connectToDB();
 
-    // Autorisierungsprüfung
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
@@ -48,7 +44,6 @@ export async function PUT(request, context) {
 
     const { action, gameIndex, challengeTime, gameTimers, pauseTime, isPauseRunning } = await request.json();
 
-    // Challenge aus der Datenbank holen
     let challenge = await Challenge.findById(id);
 
     if (!challenge) {
@@ -58,7 +53,6 @@ export async function PUT(request, context) {
       );
     }
 
-    // Prüfen, ob der Benutzer der Ersteller ist
     const user = await User.findOne({ email: session.user.email });
 
     if (!user) {
@@ -77,12 +71,10 @@ export async function PUT(request, context) {
       );
     }
 
-    // Speichere den aktuellen Timer-Zustand
     if (challengeTime !== undefined && challenge.timer) {
       challenge.timer.duration = challengeTime;
     }
 
-    // Speichere die Game-Timer-Zustände
     if (gameTimers && Array.isArray(gameTimers) && challenge.games) {
       challenge.games.forEach((game, index) => {
         if (gameTimers[index] !== undefined) {
@@ -91,7 +83,6 @@ export async function PUT(request, context) {
       });
     }
 
-    // Erstelle oder aktualisiere den Pause-Timer
     if (!challenge.pauseTimer) {
       challenge.pauseTimer = {};
     }
@@ -104,7 +95,6 @@ export async function PUT(request, context) {
       challenge.pauseTimer.isRunning = isPauseRunning;
     }
 
-    // Führe die angeforderte Aktion aus
     switch (action) {
       case 'start-challenge-timer':
         const now = new Date();
@@ -121,7 +111,6 @@ export async function PUT(request, context) {
           challenge.timer.isRunning = true;
           challenge.paused = false;
 
-          // Pause-Timer stoppen wenn Challenge startet
           if (challenge.pauseTimer) {
             challenge.pauseTimer.isRunning = false;
           }
@@ -135,12 +124,9 @@ export async function PUT(request, context) {
           challenge.timer.isRunning = false;
           challenge.paused = true;
 
-          // Pause-Timer starten wenn Challenge pausiert
           if (challenge.pauseTimer) {
             challenge.pauseTimer.isRunning = true;
           }
-
-          // WICHTIG: Alle laufenden Spiel-Timer pausieren
           challenge.games.forEach((game, idx) => {
             if (game.timer.isRunning) {
               game.timer.lastPauseTime = now;
@@ -161,7 +147,6 @@ export async function PUT(request, context) {
           challenge.completed = true;
           challenge.completedAt = endTime;
 
-          // Pause-Timer stoppen wenn Challenge endet
           if (challenge.pauseTimer) {
             challenge.pauseTimer.isRunning = false;
           }
@@ -170,13 +155,11 @@ export async function PUT(request, context) {
 
       case 'start-game-timer':
         if (gameIndex !== undefined) {
-          // First, stop any other running game timers
           for (let i = 0; i < challenge.games.length; i++) {
             if (i !== gameIndex && challenge.games[i].timer.isRunning) {
               const otherGame = challenge.games[i];
               const now = new Date();
 
-              // Calculate duration for the game being stopped
               if (otherGame.timer.startTime) {
                 const runningTime = now - otherGame.timer.startTime;
                 otherGame.timer.duration = runningTime - otherGame.timer.pausedTime;
@@ -188,8 +171,6 @@ export async function PUT(request, context) {
               console.log(`Stopped timer for game ${i} before starting game ${gameIndex}`);
             }
           }
-
-          // Now start the requested game timer
           const game = challenge.games[gameIndex];
           if (game && !game.completed) {
             const now = new Date();
@@ -236,12 +217,9 @@ export async function PUT(request, context) {
           const game = challenge.games[gameIndex];
           if (game) {
             game.currentWins += 1;
-
-            // Check if game is completed
             if (game.currentWins >= game.winCount) {
               game.completed = true;
 
-              // Stop timer if running
               if (game.timer.isRunning) {
                 const now = new Date();
                 let totalDuration = 0;
@@ -257,13 +235,11 @@ export async function PUT(request, context) {
               }
             }
 
-            // Check if all games are completed
             const allCompleted = challenge.games.every(g => g.completed);
             if (allCompleted) {
               challenge.completed = true;
               challenge.completedAt = new Date();
 
-              // Wichtig: Auch den Challenge-Timer stoppen
               if (challenge.timer.isRunning) {
                 const endTime = new Date();
                 const runningTime = endTime - challenge.timer.startTime;
@@ -285,10 +261,7 @@ export async function PUT(request, context) {
         );
     }
 
-    // Speichere die Änderungen in der Datenbank
     await challenge.save();
-
-    // Emit socket event if we have a global io instance
     if (typeof global.io !== 'undefined') {
       global.io.to(`challenge-${id}`).emit('challenge-updated', challenge);
     }

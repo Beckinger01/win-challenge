@@ -9,10 +9,10 @@ const Home = () => {
       <p className="text-center pt-20 text-gray-200 sm:text-2xl text-xl">Erstelle deine eigene Challenge oder schaue Live zu</p>
       <div className="flex justify-center pt-20 gap-4">
         <Link href="/login" className="primary_btn primary-gradient">
-        Spiele Challenge
+          Spiele Challenge
         </Link>
         <Link href="/" className="primary_btn primary-gradient">
-        Schaue Live zu
+          Schaue Live zu
         </Link>
       </div>
     </section>

@@ -70,7 +70,7 @@ const ChallengeSchema = new Schema({
     type: [GameSchema],
     required: [true, "Mindestens ein Spiel wird benötigt"],
     validate: {
-      validator: function(games) {
+      validator: function (games) {
         return games.length > 0;
       },
       message: "Die Challenge muss mindestens ein Spiel enthalten"

@@ -14,8 +14,6 @@ const UserSchema = new Schema({
     },
     password: {
         type: String,
-        // Nur für E-Mail/Passwort-Authentifizierung erforderlich
-        // Nicht erforderlich für OAuth-Authentifizierung (Google)
     },
     image: {
         type: String,

@@ -16,7 +16,6 @@ export async function PUT(request) {
 
     const { email, currentPassword } = await request.json();
 
-    // E-Mail validieren
     if (!email || !email.includes('@') || !email.includes('.')) {
       return new Response(JSON.stringify({ message: "Ungültige E-Mail-Adresse" }), { status: 400 });
     }
@@ -33,8 +32,8 @@ export async function PUT(request) {
     }
 
     const isPasswordValid = await compare(currentPassword, user.password);
-        if (!isPasswordValid) {
-          return new Response(JSON.stringify({ message: "Aktuelles Passwort ist falsch" }), { status: 401 });
+    if (!isPasswordValid) {
+      return new Response(JSON.stringify({ message: "Aktuelles Passwort ist falsch" }), { status: 401 });
     }
     user.email = email;
     await user.save();

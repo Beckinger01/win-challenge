@@ -1,6 +1,3 @@
-// hooks/useSocket.js
-'use client';
-
 import { useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 
@@ -9,10 +6,8 @@ export const useSocket = (challengeId) => {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    // Only initialize socket on the client side
     if (typeof window === 'undefined') return;
-    
-    // Create socket connection
+
     const socketInstance = io('/', {
       path: '/socket.io',
       autoConnect: true,
@@ -20,14 +15,13 @@ export const useSocket = (challengeId) => {
       reconnectionAttempts: 10,
       reconnectionDelay: 1000,
     });
-    
+
     setSocket(socketInstance);
 
-    // Socket event handlers
     const onConnect = () => {
       console.log('Socket connected');
       setIsConnected(true);
-      
+
       if (challengeId) {
         socketInstance.emit('join-challenge', challengeId);
       }
@@ -41,7 +35,6 @@ export const useSocket = (challengeId) => {
     socketInstance.on('connect', onConnect);
     socketInstance.on('disconnect', onDisconnect);
 
-    // Clean up on unmount
     return () => {
       socketInstance.off('connect', onConnect);
       socketInstance.off('disconnect', onDisconnect);

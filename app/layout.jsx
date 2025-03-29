@@ -7,16 +7,16 @@ export const metadata = {
   description: "Create or watch Win-Challenges",
 };
 
-const RootLayout =({ children }) => {
+const RootLayout = ({ children }) => {
   return (
     <html lang="de">
       <body>
-      <Provider>
-        <main className='pt-16 font-int'>
-          <Nav />
-          {children}
-        </main>
-      </Provider>
+        <Provider>
+          <main className='pt-16 font-int'>
+            <Nav />
+            {children}
+          </main>
+        </Provider>
       </body>
     </html>
   );

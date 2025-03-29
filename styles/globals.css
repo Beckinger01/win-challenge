@@ -11,7 +11,6 @@
 }
 
 body {
-  /* Mehrere Hintergrundebenen */
   background-image:
     url('/images/background.jpg');
 
@@ -28,9 +27,11 @@ body {
   0% {
     box-shadow: 0 0 0 0 rgba(166, 145, 110, 0.4);
   }
+
   70% {
     box-shadow: 0 0 0 6px rgba(166, 145, 110, 0);
   }
+
   100% {
     box-shadow: 0 0 0 0 rgba(166, 145, 110, 0);
   }
@@ -40,46 +41,50 @@ body {
   animation: pulse-border 2s infinite;
 }
 
-/* Smooth transitions für alle Elemente */
 .transition-all {
   transition-property: all;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 500ms;
 }
 
-/* Hover Effekt für Buttons */
 .hover-glow:hover {
   box-shadow: 0 0 10px rgba(166, 145, 110, 0.5);
 }
 
-/* Progressbar Animation */
 @keyframes progress-fill {
-  from { width: 0; }
-  to { width: 100%; }
+  from {
+    width: 0;
+  }
+
+  to {
+    width: 100%;
+  }
 }
 
 .animate-progress {
   animation: progress-fill 0.5s ease-in-out;
 }
 
-/* Smooth loading animation */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .fade-in {
   animation: fadeIn 0.5s ease-in-out;
 }
 
-/* Background pattern */
 .bg-pattern {
   background-color: #0a0a0a;
   background-image: radial-gradient(#1a1a1a 1px, transparent 1px);
   background-size: 20px 20px;
 }
 
-/* Für bessere Card-Übergänge */
 .card-appear {
   opacity: 0;
   transform: translateY(10px);
@@ -93,7 +98,6 @@ body {
   }
 }
 
-/* Aktiven und inaktiven Status visuell deutlicher unterscheiden */
 .status-active {
   position: relative;
   overflow: hidden;
@@ -124,17 +128,17 @@ body {
 
 .primary-gradient {
   background: #554023;
-  background: linear-gradient(to right,#ffea7a,#d5a44d, #ffea7a);
+  background: linear-gradient(to right, #ffea7a, #d5a44d, #ffea7a);
 }
 
 .hover\:primary-gradient:hover {
   background: #554023;
-  background: linear-gradient(to right,#ffea7a,#d5a44d, #ffea7a);
+  background: linear-gradient(to right, #ffea7a, #d5a44d, #ffea7a);
 }
 
 .primary-text-gradient {
   background: #554023;
-  background: linear-gradient(to right,#ffea7a,#d5a44d, #ffea7a);
+  background: linear-gradient(to right, #ffea7a, #d5a44d, #ffea7a);
   background-clip: text;
   color: transparent;
 }

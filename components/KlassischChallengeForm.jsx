@@ -9,7 +9,6 @@ const KlassischChallengeForm = () => {
   const { data: session } = useSession();
   const router = useRouter();
 
-  // Debug: Session-Daten in der Konsole anzeigen
   console.log("Session data:", session);
 
   const [challengeName, setChallengeName] = useState("");
@@ -19,24 +18,20 @@ const KlassischChallengeForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // Handle adding a new game to the list
   const handleAddGame = () => {
     setGames([...games, { name: "", winCount: 0 }]);
   };
 
-  // Handle removing a game from the list
   const handleRemoveGame = (index) => {
     const updatedGames = [...games];
     updatedGames.splice(index, 1);
     setGames(updatedGames);
   };
 
-  // Handle game input changes
   const handleGameChange = (index, field, value) => {
     const updatedGames = [...games];
 
     if (field === "winCount") {
-      // Ensure win count is at least 1
       value = Math.max(1, parseInt(value) || 1);
     }
 
@@ -48,17 +43,14 @@ const KlassischChallengeForm = () => {
     setGames(updatedGames);
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate form
     if (!challengeName.trim()) {
       setErrorMessage("Bitte gib einen Namen für die Challenge ein.");
       return;
     }
 
-    // Überprüfung, ob jedes Spiel eine Anzahl Siege >= 1 hat
     if (games.some(game => game.winCount < 1)) {
       setErrorMessage("Anzahl Siege muss für alle Spiele mindestens 1 sein.");
       return;
@@ -90,7 +82,6 @@ const KlassischChallengeForm = () => {
 
       console.log("Submitting challenge data:", JSON.stringify(challengeData));
 
-      // Submit to API
       const response = await fetch("/api/challenges", {
         method: "POST",
         headers: {
@@ -112,21 +103,15 @@ const KlassischChallengeForm = () => {
         throw new Error(errorMessage);
       }
 
-      // Parsen der Antwort, um die Challenge-ID zu erhalten
       const responseData = await response.json();
       console.log("Challenge-Antwort:", responseData);
 
-      // Ermittle die ID aus der Antwort - überprüfe verschiedene mögliche Feldnamen
       const challengeId = responseData.id || responseData._id || responseData.challengeId;
       console.log("Extrahierte Challenge-ID:", challengeId);
 
       if (challengeId) {
-        // Erweiterte Debug-Informationen
         console.log("Redirect-URL:", `/challenge/${challengeId}`);
-
-        // Kurzer Timeout, um sicherzustellen, dass die Daten in der DB verfügbar sind
         setTimeout(() => {
-          // Setze den Pfad für die Weiterleitung
           const path = `/challenge/${challengeId}`;
           console.log("Navigiere zu:", path);
           router.push(path);
@@ -159,7 +144,6 @@ const KlassischChallengeForm = () => {
         onSubmit={handleSubmit}
         className="w-full bg-gray-900 rounded-2xl border border-[#a6916e] p-6"
       >
-        {/* Challenge Name */}
         <div className="mb-6">
           <label htmlFor="challengeName" className="block text-white text-lg font-medium mb-2">
             Challenge-Name
@@ -175,7 +159,6 @@ const KlassischChallengeForm = () => {
           />
         </div>
 
-        {/* Games List */}
         <div className="mb-6">
           <label className="block text-white text-lg font-medium mb-2">
             Spiele
@@ -233,15 +216,12 @@ const KlassischChallengeForm = () => {
             + Spiel hinzufügen
           </button>
         </div>
-
-        {/* Error Message */}
         {errorMessage && (
           <div className="mb-4 p-3 bg-red-500 text-white rounded">
             {errorMessage}
           </div>
         )}
 
-        {/* Submit Button */}
         <button
           type="submit"
           disabled={isSubmitting}

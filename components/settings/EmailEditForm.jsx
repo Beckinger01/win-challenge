@@ -47,7 +47,7 @@ const EmailEditForm = ({ session, onUpdate, showMessage, emailMask }) => {
       showMessage("E-Mail erfolgreich aktualisiert! Seite wird neu geladen...");
 
       setTimeout(() => {
-      window.location.reload();
+        window.location.reload();
       }, 1500);
 
     } catch (error) {

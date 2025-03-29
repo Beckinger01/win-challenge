@@ -88,28 +88,24 @@ const Settings = () => {
         <span className="text-[#a6916e]">{maskEmail(session?.user.email)}</span>
       </div>
 
-      {/* Erfolgsmeldung */}
       {successMessage && (
         <div className="mb-4 p-3 bg-green-600 text-white rounded-md">
           {successMessage}
         </div>
       )}
 
-      {/* Fehlermeldung */}
       {errorMessage && (
         <div className="mb-4 p-3 bg-red-600 text-white rounded-md">
           {errorMessage}
         </div>
       )}
 
-      {/* Benutzernamen-Formular */}
       <UsernameEditForm
         session={session}
         onUpdate={(data) => handleSessionUpdate(data, true)}
         showMessage={showMessage}
       />
 
-      {/* Nur für Credentials-Benutzer anzeigen */}
       {isCredentialsUser && (
         <>
           {/* E-Mail-Formular */}
@@ -120,7 +116,6 @@ const Settings = () => {
             emailMask={maskEmail(session?.user.email)}
           />
 
-          {/* Passwort-Formular */}
           <PasswordEditForm
             showMessage={showMessage}
           />

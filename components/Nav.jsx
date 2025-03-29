@@ -22,23 +22,18 @@ function Nav() {
   useEffect(() => {
     const controlNavbar = () => {
       if (typeof window !== 'undefined') {
-        // Wenn nach unten gescrollt wird, verstecke die Navbar
         if (window.scrollY > lastScrollY) {
           setNavbarVisible(false);
         }
-        // Wenn nach oben gescrollt wird, zeige die Navbar
         else {
           setNavbarVisible(true);
         }
-
-        // Aktualisiere die letzte Scroll-Position
         setLastScrollY(window.scrollY);
       }
     };
 
     window.addEventListener('scroll', controlNavbar);
 
-    // Cleanup-Funktion
     return () => {
       window.removeEventListener('scroll', controlNavbar);
     };

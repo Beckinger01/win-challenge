@@ -5,13 +5,11 @@ import Link from "next/link";
 const formatTime = (duration) => {
   if (!duration) return "00:00:00";
 
-  // Umrechnung von Millisekunden in Stunden, Minuten und Sekunden
   const totalSeconds = Math.floor(duration / 1000);
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
 
-  // Format: HH:MM:SS mit führenden Nullen
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 };
 
@@ -26,18 +24,15 @@ const formatDate = (dateString) => {
 };
 
 const ProfileChallengeCard = ({ name, timer = {}, id, startDate, type, gameCount, isActive }) => {
-  // Berechne die formatierte Zeit
+
   const formattedTime = formatTime(timer.duration);
   const formattedDate = formatDate(startDate);
 
   const handleCardClick = (e) => {
-    // Verhindern, dass der Event-Handler ausgelöst wird, wenn auf einen der unteren Buttons geklickt wird
     if (e.target.closest('.action-buttons')) {
       e.stopPropagation();
       return;
     }
-
-    // Sonst zur Challenge-View navigieren
     window.location.href = `/challenge-view/${id}`;
   };
 
@@ -46,7 +41,6 @@ const ProfileChallengeCard = ({ name, timer = {}, id, startDate, type, gameCount
       onClick={handleCardClick}
       className={`relative cursor-pointer bg-gray-800 rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow duration-300 border ${isActive ? 'border-green-500 border-2' : 'border-[#a6916e]'} hover:border-blue-600`}
     >
-      {/* Status-Badge für aktive Challenges */}
       {isActive && (
         <div className="absolute top-0 right-0 bg-green-500 text-white px-2 py-1 text-xs flex items-center rounded-bl-lg z-10">
           <span className="inline-block w-2 h-2 bg-white rounded-full mr-1 animate-pulse"></span>
@@ -74,7 +68,6 @@ const ProfileChallengeCard = ({ name, timer = {}, id, startDate, type, gameCount
         </div>
       </div>
 
-      {/* Separate Buttons-Sektion, die das Event nicht propagiert */}
       <div className="action-buttons flex justify-center gap-3 mt-6" onClick={(e) => e.stopPropagation()}>
         <Link
           href={`/challenge/${id}`}

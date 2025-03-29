@@ -15,8 +15,6 @@ const PasswordEditForm = ({ showMessage }) => {
 
   const handleUpdate = async () => {
     setError("");
-
-    // Validiere Passwörter
     if (!currentPassword) {
       setError("Bitte gib dein aktuelles Passwort ein.");
       return;
@@ -54,13 +52,11 @@ const PasswordEditForm = ({ showMessage }) => {
         throw new Error(data.message || "Fehler beim Aktualisieren des Passworts");
       }
 
-      // Beende den Bearbeitungsmodus und setze Felder zurück
       setEditing(false);
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
 
-      // Zeige Erfolgsmeldung
       showMessage("Passwort erfolgreich aktualisiert!");
 
     } catch (error) {
@@ -97,7 +93,6 @@ const PasswordEditForm = ({ showMessage }) => {
         <p className="text-[#a6916e]">••••••••</p>
       ) : (
         <div className="space-y-3">
-          {/* Aktuelles Passwort */}
           <div className="relative">
             <label className="block text-sm text-gray-300 mb-1">Aktuelles Passwort</label>
             <div className="relative">
@@ -119,7 +114,6 @@ const PasswordEditForm = ({ showMessage }) => {
             </div>
           </div>
 
-          {/* Neues Passwort */}
           <div className="relative">
             <label className="block text-sm text-gray-300 mb-1">Neues Passwort</label>
             <div className="relative">
@@ -141,7 +135,6 @@ const PasswordEditForm = ({ showMessage }) => {
             </div>
           </div>
 
-          {/* Passwort bestätigen */}
           <div>
             <label className="block text-sm text-gray-300 mb-1">Passwort bestätigen</label>
             <input

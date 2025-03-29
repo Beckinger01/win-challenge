@@ -116,10 +116,10 @@ export default function SignInForm() {
 
         <div className="pt-4 text-center">
           <p className='text-sm text-gray-600'>
-          Noch keinen Account?{' '}
-          <Link href="/signup" className="primary-text-gradient hover:text-blue-400 text-sm">
-            Registrieren
-          </Link>
+            Noch keinen Account?{' '}
+            <Link href="/signup" className="primary-text-gradient hover:text-blue-400 text-sm">
+              Registrieren
+            </Link>
           </p>
         </div>
       </form>

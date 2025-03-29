@@ -35,11 +35,10 @@ const ChallengeControlPage = ({ params }) => {
     userEmail: null
   });
 
-  // Fetch challenge data and check authorization
   useEffect(() => {
     const checkAuthAndFetchChallenge = async () => {
       try {
-        // Autorisierung überprüfen
+
         const authResponse = await fetch(`/api/challenges/${id}/authorize`);
         const authData = await authResponse.json();
 
@@ -57,7 +56,6 @@ const ChallengeControlPage = ({ params }) => {
           return;
         }
 
-        // Challenge-Daten holen
         const response = await fetch(`/api/challenges/${id}`);
 
         if (!response.ok) {
@@ -67,22 +65,16 @@ const ChallengeControlPage = ({ params }) => {
         const data = await response.json();
         setChallenge(data);
 
-        // Game Timers initialisieren
         setGameTimers(data.games.map((game) => ({
           value: getCurrentTimerValue(game.timer),
           isRunning: game.timer.isRunning
         })));
 
-        // Challenge Timer setzen
         setChallengeTime(getCurrentTimerValue(data.timer));
-
-        // Aktives Spiel finden
         const activeIndex = data.games.findIndex(game => game.timer.isRunning);
         if (activeIndex !== -1) {
           setActiveGameIndex(activeIndex);
         }
-
-        // Pause-Timer initialisieren
         if (data.pauseTimer) {
           setPauseTime(data.pauseTimer.duration || 0);
           setIsPauseRunning(data.pauseTimer.isRunning || false);
@@ -103,19 +95,15 @@ const ChallengeControlPage = ({ params }) => {
     }
   }, [id, session]);
 
-  // Timer-Updates
   useEffect(() => {
     if (!challenge) return;
 
     const timerInterval = setInterval(() => {
       const now = Date.now();
-
-      // Challenge-Timer aktualisieren
       if (challenge.timer.isRunning) {
         setChallengeTime((prev) => prev + 1000);
       }
 
-      // Spiel-Timer aktualisieren
       setGameTimers((prevTimers) =>
         prevTimers.map((timer, index) => {
           if (timer.isRunning) {
@@ -125,12 +113,10 @@ const ChallengeControlPage = ({ params }) => {
         })
       );
 
-      // Pause-Timer aktualisieren
       if (isPauseRunning) {
         setPauseTime((prev) => prev + 1000);
       }
 
-      // Automatisches Speichern (10 Minuten)
       if (now - lastSaveTime >= 600000) {
         saveCurrentState();
         setLastSaveTime(now);
@@ -140,39 +126,30 @@ const ChallengeControlPage = ({ params }) => {
     return () => clearInterval(timerInterval);
   }, [challenge, isPauseRunning, lastSaveTime]);
 
-  // Effect zum automatischen Stoppen des Timers, wenn alle Spiele abgeschlossen sind
   useEffect(() => {
     if (!challenge) return;
-    
-    // Nur ausführen, wenn alle Bedingungen erfüllt sind und 
-    // keine vorherige Aktion noch läuft
-    if (challenge.games.length > 0 && 
-        challenge.games.every(game => game.completed) && 
-        challenge.timer.isRunning &&
-        !isSwitchingGame) {
-      
-      // Referenz auf den Challenge-Zustand zum Zeitpunkt des Aufrufens speichern
+
+    if (challenge.games.length > 0 &&
+      challenge.games.every(game => game.completed) &&
+      challenge.timer.isRunning &&
+      !isSwitchingGame) {
+
       const challengeId = challenge._id;
-      
-      // Async ausführen, um den Event-Loop nicht zu blockieren
+
       (async () => {
         console.log("Alle Spiele abgeschlossen - Timer wird automatisch gestoppt");
-        
-        // Flag setzen, um mehrfache Aufrufe zu verhindern
         setIsSwitchingGame(true);
-        
+
         try {
-          // API direkt aufrufen, nicht die Funktion, die state aktualisiert
           await fetch(`/api/challenges/${challengeId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
+            body: JSON.stringify({
               action: 'stop-challenge-timer',
               challengeTime: challengeTime
             })
           });
-          
-          // Nach kurzer Verzögerung Daten neu laden
+
           setTimeout(async () => {
             const response = await fetch(`/api/challenges/${challengeId}`);
             if (response.ok) {
@@ -182,7 +159,7 @@ const ChallengeControlPage = ({ params }) => {
               setIsSwitchingGame(false);
             }
           }, 500);
-          
+
         } catch (error) {
           console.error("Fehler beim automatischen Stoppen:", error);
           setIsSwitchingGame(false);
@@ -191,31 +168,25 @@ const ChallengeControlPage = ({ params }) => {
     }
   }, [challenge?.games, challenge?.timer.isRunning]);
 
-  // Socket-Events
   useEffect(() => {
     if (!socket) return;
 
     const handleChallengeUpdated = (data) => {
       setChallenge(data);
 
-      // Game Timers aktualisieren
       setGameTimers(data.games.map((game) => ({
         value: getCurrentTimerValue(game.timer),
         isRunning: game.timer.isRunning
       })));
 
-      // Challenge Timer aktualisieren
       setChallengeTime(getCurrentTimerValue(data.timer));
 
-      // Aktives Spiel aktualisieren
       const activeIndex = data.games.findIndex(game => game.timer.isRunning);
       if (activeIndex !== -1) {
         setActiveGameIndex(activeIndex);
       } else {
         setActiveGameIndex(null);
       }
-
-      // Pause Timer aktualisieren
       if (data.pauseTimer) {
         setPauseTime(data.pauseTimer.duration || 0);
         setIsPauseRunning(data.pauseTimer.isRunning || false);
@@ -228,20 +199,16 @@ const ChallengeControlPage = ({ params }) => {
       socket.off('challenge-updated', handleChallengeUpdated);
     };
   }, [socket]);
-
-  // Aktuellen Zustand speichern
   const saveCurrentState = async () => {
     if (!challenge) return;
 
     try {
       const updatedChallenge = { ...challenge };
 
-      // Challenge-Timer aktualisieren
       if (updatedChallenge.timer.isRunning) {
         updatedChallenge.timer.duration = challengeTime;
       }
 
-      // Spiel-Timer aktualisieren
       updatedChallenge.games = updatedChallenge.games.map((game, index) => {
         if (game.timer.isRunning) {
           return {
@@ -254,15 +221,12 @@ const ChallengeControlPage = ({ params }) => {
         }
         return game;
       });
-
-      // Pause-Timer aktualisieren
       if (!updatedChallenge.pauseTimer) {
         updatedChallenge.pauseTimer = {};
       }
       updatedChallenge.pauseTimer.duration = pauseTime;
       updatedChallenge.pauseTimer.isRunning = isPauseRunning;
 
-      // In Datenbank speichern
       const response = await fetch(`/api/challenges/${id}/save-state`, {
         method: 'PUT',
         headers: {
@@ -293,7 +257,6 @@ const ChallengeControlPage = ({ params }) => {
     }
   };
 
-  // API-Update-Funktion
   const updateChallenge = async (action, gameIndex = undefined) => {
     if (!isAuthorized) {
       setError('Du bist nicht berechtigt, diese Challenge zu steuern');
@@ -348,7 +311,6 @@ const ChallengeControlPage = ({ params }) => {
     }
   };
 
-  // Challenge Timer Controls
   const startChallengeTimer = () => {
     setIsPauseRunning(false);
     updateChallenge('start-challenge-timer');
@@ -364,62 +326,44 @@ const ChallengeControlPage = ({ params }) => {
     updateChallenge('stop-challenge-timer');
   };
 
-  // Verbesserte switchToGame Funktion
   const switchToGame = async (index) => {
-    // Keine Aktion wenn bereits aktiv oder abgeschlossen
     if (index === activeGameIndex) return;
     if (challenge.games[index]?.completed) return;
-
-    // Blockiere mehrere Klicks
     if (isSwitchingGame) return;
 
     try {
-      // Status für Übergang setzen
       setIsSwitchingGame(true);
-
-      // Wichtig: Setze pendingGameIndex, OHNE activeGameIndex zu ändern
-      // Das verhindert das Flackern!
       setPendingGameIndex(index);
 
-      // Challenge Timer starten, falls nötig
       if (!challenge.timer.isRunning) {
         await updateChallenge('start-challenge-timer');
       }
 
-      // Aktuelles Spiel stoppen (wenn vorhanden)
       if (activeGameIndex !== null) {
         await updateChallenge('stop-game-timer', activeGameIndex);
       }
 
-      // Neues Spiel starten
       const result = await updateChallenge('start-game-timer', index);
 
       if (!result) {
         throw new Error("Fehler beim Starten des neuen Spiels");
       }
-
-      // Erst NACH Abschluss aller API-Aufrufe den aktiven Index ändern
       setActiveGameIndex(index);
       setPendingGameIndex(null);
 
     } catch (error) {
       console.error("Fehler beim Spielwechsel:", error);
       setPendingGameIndex(null);
-
-      // Bei Fehler Daten neu laden
       try {
         const response = await fetch(`/api/challenges/${id}`);
         if (response.ok) {
           const refreshedData = await response.json();
           setChallenge(refreshedData);
 
-          // Timer aktualisieren
           setGameTimers(refreshedData.games.map((game) => ({
             value: getCurrentTimerValue(game.timer),
             isRunning: game.timer.isRunning
           })));
-
-          // Aktives Spiel aktualisieren
           const refreshedActiveIndex = refreshedData.games.findIndex(game => game.timer.isRunning);
           setActiveGameIndex(refreshedActiveIndex !== -1 ? refreshedActiveIndex : null);
         }
@@ -427,20 +371,17 @@ const ChallengeControlPage = ({ params }) => {
         console.error("Fehler beim Neuladen:", refreshError);
       }
     } finally {
-      // Verzögerung, bevor weitere Klicks erlaubt werden
       setTimeout(() => {
         setIsSwitchingGame(false);
       }, 1000);
     }
   };
 
-  // Win Count Control
   const increaseWinCount = (index, e) => {
     e.stopPropagation();
     updateChallenge('increase-win-count', index);
   };
 
-  // Ladeanimation
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen bg-black">
@@ -449,7 +390,6 @@ const ChallengeControlPage = ({ params }) => {
     );
   }
 
-  // Fehlermeldung
   if (error) {
     return (
       <div className="flex flex-col justify-center items-center h-screen bg-black">
@@ -461,7 +401,6 @@ const ChallengeControlPage = ({ params }) => {
     );
   }
 
-  // Prüfung, ob Benutzer eingeloggt ist
   if (!session?.user) {
     return (
       <div className="flex flex-col justify-center items-center h-screen bg-black">
@@ -472,8 +411,6 @@ const ChallengeControlPage = ({ params }) => {
       </div>
     );
   }
-
-  // Prüfung auf Autorisierung
   if (!isAuthorized) {
     return (
       <div className="flex flex-col justify-center items-center h-screen bg-black">
@@ -486,19 +423,16 @@ const ChallengeControlPage = ({ params }) => {
     );
   }
 
-  // Fehlermeldung, wenn Challenge nicht gefunden wurde
   if (!challenge) {
     return <div className="flex justify-center items-center h-screen bg-black text-[#a6916e]">Challenge nicht gefunden</div>;
   }
 
-  // Berechne Zeit seit letztem Speichern
   const minutesSinceLastSave = Math.floor((Date.now() - lastSaveTime) / 60000);
 
 
   return (
     <div className="min-h-screen">
       <div className="container mx-auto px-4 pt-4">
-        {/* Kompakter Header mit Namen und Link kopieren */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-[#a6916e]">{challenge.name}</h1>
           <div className="flex items-center gap-4">
@@ -518,8 +452,6 @@ const ChallengeControlPage = ({ params }) => {
             </button>
           </div>
         </div>
-
-        {/* Großer zentraler Timer */}
         <div className="flex flex-col items-center justify-center mb-10">
           <div className="text-8xl font-mono font-bold text-[#a6916e] mb-8">{formatTime(challengeTime)}</div>
 
@@ -559,15 +491,12 @@ const ChallengeControlPage = ({ params }) => {
               <span className="text-gray-500 text-lg font-bold">Nicht gestartet</span>
             )}
           </div>
-
-          {/* Info */}
           <div className="text-sm text-gray-400 mb-6">
             <span className="text-[#a6916e]">Letzter Speichervorgang: </span>
             <span>{minutesSinceLastSave === 0 ? 'Gerade eben' : `vor ${minutesSinceLastSave} Minuten`}</span>
           </div>
         </div>
 
-        {/* Pause Timer Anzeige */}
         <div className="max-w-md mx-auto mb-10">
           <div className="bg-[#151515] rounded-lg border border-[#a6916e] py-3 px-4 shadow-lg">
             <div className="flex items-center justify-between">
@@ -576,14 +505,10 @@ const ChallengeControlPage = ({ params }) => {
             </div>
           </div>
         </div>
-
-        {/* Spiele-Sektion */}
         <div className="max-w-6xl mx-auto">
           <div className="bg-[#151515] rounded-lg border border-[#a6916e] p-6 shadow-lg relative">
             <h2 className="text-xl font-semibold mb-4 text-[#a6916e] border-b border-[#333333] pb-2">Spiele</h2>
             <p className="text-sm text-gray-400 mb-6">Wähle ein Spiel, um seinen Timer zu starten. Das aktive Spiel wird mit einem farbigen Rahmen markiert.</p>
-
-            {/* Spielwechsel-Indikator */}
             {isSwitchingGame && (
               <div className="absolute inset-0 bg-[#151515] bg-opacity-90 flex items-center justify-center z-10 rounded-lg">
                 <div className="text-center">
@@ -611,12 +536,10 @@ const ChallengeControlPage = ({ params }) => {
                         : 'bg-[#1a1a1a] border border-[#333333] hover:border-[#a6916e]'
                     }`}
                 >
-                  {/* Aktiv-Indikator */}
                   {!game.completed && (activeGameIndex === index || pendingGameIndex === index) && (
                     <div className="absolute top-0 left-0 w-full h-1 bg-[#a6916e]"></div>
                   )}
 
-                  {/* Pausiert-Indikator */}
                   {challenge.paused && (
                     <div className="absolute top-0 right-0 px-2 py-1 bg-yellow-800 text-yellow-300 text-xs rounded-bl">
                       Pausiert
@@ -662,7 +585,6 @@ const ChallengeControlPage = ({ params }) => {
                       </div>
                     </div>
 
-                    {/* Progress Bar */}
                     <div className="w-full bg-[#2a2a2a] h-2 rounded-full mb-4 overflow-hidden">
                       <div
                         className="h-full bg-[#a6916e] rounded-full"

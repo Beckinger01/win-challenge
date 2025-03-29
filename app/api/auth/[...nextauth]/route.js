@@ -102,9 +102,9 @@ export const authOptions = {
           await connectToDB();
           let currentUser;
 
-          if(ObjectId.isValid(token.id)) {
+          if (ObjectId.isValid(token.id)) {
             currentUser = await User.findById(token.id);
-          }else{
+          } else {
             currentUser = await User.findOne({ email: session.user.email });
           }
 

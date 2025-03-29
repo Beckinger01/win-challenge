@@ -5,18 +5,16 @@ import { useSocket } from '@/hooks/useSocket';
 import { formatTime, getCurrentTimerValue } from '@/utils/timerUtils.client';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
+import NoScrollView from '@/components/NoScrollView'; // Import the NoScrollView component
 
 const ChallengeControlPage = ({ params }) => {
-  // Session für Auth-Prüfung
   const { data: session, status } = useSession();
 
-  // Params unwrappen
   const resolvedParams = use(params);
   const { id } = resolvedParams;
 
   const { socket, isConnected } = useSocket(id);
 
-  // Zustandsvariablen
   const [challenge, setChallenge] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -34,6 +32,49 @@ const ChallengeControlPage = ({ params }) => {
     creatorId: null,
     userEmail: null
   });
+  // New state for view toggle
+  const [isNoScrollView, setIsNoScrollView] = useState(false);
+
+  // Handle toggling the navbar visibility when changing views
+  useEffect(() => {
+    if (isNoScrollView) {
+      // Find the Nav component and hide it
+      const navElement = document.querySelector('nav');
+      if (navElement) {
+        navElement.style.display = 'none';
+      }
+
+      // Remove padding-top from main element
+      const mainElement = document.querySelector('main');
+      if (mainElement) {
+        mainElement.style.paddingTop = '0';
+      }
+    } else {
+      // Restore the Nav component and main padding
+      const navElement = document.querySelector('nav');
+      if (navElement) {
+        navElement.style.display = '';
+      }
+
+      const mainElement = document.querySelector('main');
+      if (mainElement) {
+        mainElement.style.paddingTop = '';
+      }
+    }
+
+    // Cleanup function for when component unmounts
+    return () => {
+      const navElement = document.querySelector('nav');
+      if (navElement) {
+        navElement.style.display = '';
+      }
+
+      const mainElement = document.querySelector('main');
+      if (mainElement) {
+        mainElement.style.paddingTop = '';
+      }
+    };
+  }, [isNoScrollView]);
 
   useEffect(() => {
     const checkAuthAndFetchChallenge = async () => {
@@ -321,15 +362,43 @@ const ChallengeControlPage = ({ params }) => {
     updateChallenge('pause-challenge-timer');
   };
 
-  const stopChallengeTimer = () => {
+  const stopChallengeTimer = async () => {
     setIsPauseRunning(false);
-    updateChallenge('stop-challenge-timer');
+    setGameTimers(prevTimers =>
+      prevTimers.map(timer => ({
+        ...timer,
+        isRunning: false
+      }))
+    );
+
+    try {
+      for (let i = 0; i < gameTimers.length; i++) {
+        if (gameTimers[i].isRunning) {
+          await updateChallenge('stop-game-timer', i);
+        }
+      }
+      await updateChallenge('forfied-challenge');
+      setActiveGameIndex(null);
+
+      setTimeout(async () => {
+        const response = await fetch(`/api/challenges/${id}`);
+        if (response.ok) {
+          const refreshedData = await response.json();
+          setChallenge(refreshedData);
+        }
+      }, 300);
+
+    } catch (error) {
+      console.error("Fehler beim Stoppen der Challenge:", error);
+    }
   };
 
   const switchToGame = async (index) => {
     if (index === activeGameIndex) return;
     if (challenge.games[index]?.completed) return;
     if (isSwitchingGame) return;
+    if (challenge.completed) return;
+    if (!challenge.timer.isRunning) return;
 
     try {
       setIsSwitchingGame(true);
@@ -382,19 +451,41 @@ const ChallengeControlPage = ({ params }) => {
     updateChallenge('increase-win-count', index);
   };
 
+  // Toggle between normal view and no-scroll view
+  const toggleView = () => {
+    setIsNoScrollView(!isNoScrollView);
+    // Update URL to reflect the current view without page reload
+    const url = new URL(window.location);
+    if (!isNoScrollView) {
+      url.searchParams.set('fullscreen', 'true');
+    } else {
+      url.searchParams.delete('fullscreen');
+    }
+    window.history.pushState({}, '', url);
+  };
+
+  // Check URL for fullscreen parameter on initial load
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const fullscreenParam = urlParams.get('fullscreen');
+    if (fullscreenParam === 'true') {
+      setIsNoScrollView(true);
+    }
+  }, []);
+
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen bg-black">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-[#a6916e]"></div>
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 gold-border"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex flex-col justify-center items-center h-screen bg-black">
+      <div className="flex flex-col justify-center items-center h-screen">
         <div className="text-red-500 mb-4">{error}</div>
-        <Link href="/profile" className="px-4 py-2 bg-[#a6916e] text-black rounded hover:bg-[#8b7a5e]">
+        <Link href="/profile" className="px-4 py-2 gold-bg text-black rounded">
           Zurück zum Profil
         </Link>
       </div>
@@ -403,9 +494,9 @@ const ChallengeControlPage = ({ params }) => {
 
   if (!session?.user) {
     return (
-      <div className="flex flex-col justify-center items-center h-screen bg-black">
-        <div className="text-[#a6916e] mb-4">Du musst eingeloggt sein, um die Challenge zu steuern</div>
-        <Link href={`/login?callbackUrl=/challenge/${id}`} className="px-4 py-2 bg-[#a6916e] text-black rounded hover:bg-[#8b7a5e]">
+      <div className="flex flex-col justify-center items-center h-screen">
+        <div className="gold-text mb-4">Du musst eingeloggt sein, um die Challenge zu steuern</div>
+        <Link href={`/login?callbackUrl=/challenge/${id}`} className="px-4 py-2 gold-bg text-black rounded">
           Zum Login
         </Link>
       </div>
@@ -413,10 +504,10 @@ const ChallengeControlPage = ({ params }) => {
   }
   if (!isAuthorized) {
     return (
-      <div className="flex flex-col justify-center items-center h-screen bg-black">
-        <div className="text-[#a6916e] mb-4">Du bist nicht berechtigt, diese Challenge zu steuern</div>
-        <div className="text-[#a6916e] mb-4">Die Challenge kann nur vom Ersteller gesteuert werden</div>
-        <Link href="/profile" className="px-4 py-2 bg-[#a6916e] text-black rounded hover:bg-[#8b7a5e]">
+      <div className="flex flex-col justify-center items-center h-screen">
+        <div className="gold-text mb-4">Du bist nicht berechtigt, diese Challenge zu steuern</div>
+        <div className="gold-text mb-4">Die Challenge kann nur vom Ersteller gesteuert werden</div>
+        <Link href="/profile" className="px-4 py-2 gold-bg text-black rounded">
           Zurück zum Profil
         </Link>
       </div>
@@ -424,49 +515,115 @@ const ChallengeControlPage = ({ params }) => {
   }
 
   if (!challenge) {
-    return <div className="flex justify-center items-center h-screen bg-black text-[#a6916e]">Challenge nicht gefunden</div>;
+    return <div className="flex justify-center items-center h-screen gold-shimmer-text">Challenge nicht gefunden</div>;
   }
 
-  const minutesSinceLastSave = Math.floor((Date.now() - lastSaveTime) / 60000);
-
-
-  return (
-    <div className="min-h-screen">
-      <div className="container mx-auto px-4 pt-4">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-[#a6916e]">{challenge.name}</h1>
+  // If NoScrollView is active, render that component directly (without normal container)
+  if (isNoScrollView) {
+    return (
+      <div className="min-h-screen">
+        <div className="flex justify-between items-center px-4 py-3 border-b">
+          <h1 className="text-xl font-bold gold-shimmer-text">{challenge.name}</h1>
           <div className="flex items-center gap-4">
             <div className="flex items-center">
               <div className={`w-2 h-2 rounded-full mr-2 ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
               <span className="text-sm text-gray-400">{isConnected ? 'Verbunden' : 'Offline'}</span>
             </div>
             <button
+              onClick={toggleView}
+              className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded transition duration-300"
+            >
+              Standard Ansicht
+            </button>
+            <button
               onClick={() => {
                 const url = `${window.location.origin}/challenge/public/${id}`;
                 navigator.clipboard.writeText(url);
                 alert('Link zur Zuschauerseite wurde in die Zwischenablage kopiert!');
               }}
-              className="px-3 py-1 bg-[#a6916e] text-black text-sm rounded hover:bg-[#8b7a5e] transition duration-300"
+              className="px-3 py-1 gold-bg text-black text-sm rounded transition duration-300"
+            >
+              Link kopieren
+            </button>
+          </div>
+        </div>
+
+        <NoScrollView
+          challenge={challenge}
+          challengeTime={challengeTime}
+          gameTimers={gameTimers}
+          activeGameIndex={activeGameIndex}
+          isPauseRunning={isPauseRunning}
+          pauseTime={pauseTime}
+          startChallengeTimer={startChallengeTimer}
+          pauseChallengeTimer={pauseChallengeTimer}
+          stopChallengeTimer={stopChallengeTimer}
+          switchToGame={switchToGame}
+          increaseWinCount={increaseWinCount}
+          isSwitchingGame={isSwitchingGame}
+          pendingGameIndex={pendingGameIndex}
+          toggleView={toggleView}
+          challengeName={challenge.name}
+          isConnected={isConnected}
+        />
+      </div>
+    );
+  }
+
+  // Regular view (original view)
+  const minutesSinceLastSave = Math.floor((Date.now() - lastSaveTime) / 60000);
+
+  return (
+    <div className="min-h-screen">
+      <div className="container mx-auto px-4 pt-4">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold gold-shimmer-text">{challenge.name}</h1>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center">
+              <div className={`w-2 h-2 rounded-full mr-2 ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              <span className="text-sm text-gray-400">{isConnected ? 'Verbunden' : 'Offline'}</span>
+            </div>
+            <button
+              onClick={toggleView}
+              className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded transition duration-300"
+            >
+              No-Scroll Ansicht
+            </button>
+            <button
+              onClick={() => {
+                const url = `${window.location.origin}/challenge/public/${id}`;
+                navigator.clipboard.writeText(url);
+                alert('Link zur Zuschauerseite wurde in die Zwischenablage kopiert!');
+              }}
+              className="px-3 py-1 gold-bg text-black text-sm rounded transition duration-300"
             >
               Link kopieren
             </button>
           </div>
         </div>
         <div className="flex flex-col items-center justify-center mb-10">
-          <div className="text-8xl font-mono font-bold text-[#a6916e] mb-8">{formatTime(challengeTime)}</div>
+          <div className="text-9xl font-mono font-bold gold-shimmer-text">{formatTime(challengeTime)}</div>
+          <div className="max-w-md mx-auto mb-10">
+            <div className="py-2 px-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold gold-text">Pausierte Zeit:</h2>
+                <div className="text-2xl font-mono gold-shimmer-text ml-4">{formatTime(pauseTime)}</div>
+              </div>
+            </div>
+          </div>
 
           <div className="flex justify-center space-x-6 w-full max-w-xl mb-6">
             <button
               onClick={startChallengeTimer}
               disabled={challenge.timer.isRunning || challenge.completed}
-              className={`flex-1 px-6 py-4 rounded-md text-xl font-medium ${challenge.timer.isRunning || challenge.completed ? 'bg-gray-800 text-gray-600' : 'bg-[#a6916e] text-black hover:bg-[#8b7a5e]'} transition duration-300`}
+              className={`flex-1 px-6 py-4 rounded-md text-xl font-medium ${challenge.timer.isRunning || challenge.completed ? 'bg-gray-800 text-gray-600' : 'gold-bg text-black gold-pulse'} transition duration-300`}
             >
               Start
             </button>
             <button
               onClick={pauseChallengeTimer}
               disabled={!challenge.timer.isRunning || challenge.completed}
-              className={`flex-1 px-6 py-4 rounded-md text-xl font-medium ${!challenge.timer.isRunning || challenge.completed ? 'bg-gray-800 text-gray-600' : 'bg-[#a6916e] text-black hover:bg-[#8b7a5e]'} transition duration-300`}
+              className={`flex-1 px-6 py-4 rounded-md text-xl font-medium ${!challenge.timer.isRunning || challenge.completed ? 'bg-gray-800 text-gray-600' : 'gold-bg text-black'} transition duration-300`}
             >
               Pause
             </button>
@@ -481,7 +638,9 @@ const ChallengeControlPage = ({ params }) => {
 
           <div className="flex items-center justify-center mb-8">
             <span className="font-medium text-lg mr-2 text-gray-400">Status:</span>
-            {challenge.completed ? (
+            {challenge.forfeited ? (
+              <span className="text-red-500 text-lg font-bold">Aufgegeben</span>
+            ) : challenge.completed ? (
               <span className="text-green-500 text-lg font-bold">Abgeschlossen</span>
             ) : challenge.paused ? (
               <span className="text-yellow-500 text-lg font-bold">Pausiert</span>
@@ -491,32 +650,25 @@ const ChallengeControlPage = ({ params }) => {
               <span className="text-gray-500 text-lg font-bold">Nicht gestartet</span>
             )}
           </div>
-          <div className="text-sm text-gray-400 mb-6">
-            <span className="text-[#a6916e]">Letzter Speichervorgang: </span>
-            <span>{minutesSinceLastSave === 0 ? 'Gerade eben' : `vor ${minutesSinceLastSave} Minuten`}</span>
-          </div>
         </div>
 
-        <div className="max-w-md mx-auto mb-10">
-          <div className="bg-[#151515] rounded-lg border border-[#a6916e] py-3 px-4 shadow-lg">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-[#a6916e]">Pause Zeit:</h2>
-              <div className="text-2xl font-mono text-[#a6916e]">{formatTime(pauseTime)}</div>
-            </div>
-          </div>
-        </div>
         <div className="max-w-6xl mx-auto">
-          <div className="bg-[#151515] rounded-lg border border-[#a6916e] p-6 shadow-lg relative">
-            <h2 className="text-xl font-semibold mb-4 text-[#a6916e] border-b border-[#333333] pb-2">Spiele</h2>
+          <div className="bg-[#151515] rounded-lg gold-gradient-border p-6 shadow-lg relative">
+            <h2 className="text-xl font-semibold mb-4 gold-shimmer-text border-b border-[#333333] pb-2">Spiele</h2>
+            {challenge.completed && (
+              <div className="absolute top-0 right-0 px-2 py-1 bg-red-800 text-red-300 text-xs rounded-bl">
+                Challenge beendet
+              </div>
+            )}
             <p className="text-sm text-gray-400 mb-6">Wähle ein Spiel, um seinen Timer zu starten. Das aktive Spiel wird mit einem farbigen Rahmen markiert.</p>
             {isSwitchingGame && (
               <div className="absolute inset-0 bg-[#151515] bg-opacity-90 flex items-center justify-center z-10 rounded-lg">
                 <div className="text-center">
-                  <div className="text-[#a6916e] text-2xl font-semibold mb-2">Spiel wird gewechselt</div>
+                  <div className="gold-shimmer-text text-2xl font-semibold mb-2">Spiel wird gewechselt</div>
                   <div className="flex justify-center">
-                    <div className="w-2 h-2 bg-[#a6916e] rounded-full animate-pulse mx-1"></div>
-                    <div className="w-2 h-2 bg-[#a6916e] rounded-full animate-pulse mx-1 animation-delay-200"></div>
-                    <div className="w-2 h-2 bg-[#a6916e] rounded-full animate-pulse mx-1 animation-delay-400"></div>
+                    <div className="w-2 h-2 gold-bg rounded-full animate-pulse mx-1"></div>
+                    <div className="w-2 h-2 gold-bg rounded-full animate-pulse mx-1 animation-delay-200"></div>
+                    <div className="w-2 h-2 gold-bg rounded-full animate-pulse mx-1 animation-delay-400"></div>
                   </div>
                 </div>
               </div>
@@ -526,18 +678,18 @@ const ChallengeControlPage = ({ params }) => {
               {challenge.games.map((game, index) => (
                 <div
                   key={index}
-                  onClick={() => !isSwitchingGame && !challenge.paused && switchToGame(index)}
-                  className={`relative overflow-hidden rounded-lg transition-all duration-500 
-                  ${(isSwitchingGame || challenge.paused) ? 'opacity-50 cursor-not-allowed' : 'hover:transform hover:scale-[1.02]'}
-                  ${game.completed
+                  onClick={() => !isSwitchingGame && !challenge.paused && !challenge.completed && challenge.timer.isRunning && switchToGame(index)}
+                  className={`relative overflow-hidden rounded-lg transition-all duration-500
+    ${(isSwitchingGame || challenge.paused || challenge.completed || !challenge.timer.isRunning) ? 'opacity-50 cursor-not-allowed' : 'hover:transform hover:scale-[1.02]'}
+    ${game.completed
                       ? 'bg-[#1a1a1a] border-2 border-green-600'
                       : (activeGameIndex === index || pendingGameIndex === index)
-                        ? 'bg-[#1f1a14] border-2 border-[#a6916e]'
-                        : 'bg-[#1a1a1a] border border-[#333333] hover:border-[#a6916e]'
+                        ? 'bg-[#1f1a14] border-2 gold-gradient-border'
+                        : 'bg-[#1a1a1a] border border-[#333333] hover:gold-border'
                     }`}
                 >
                   {!game.completed && (activeGameIndex === index || pendingGameIndex === index) && (
-                    <div className="absolute top-0 left-0 w-full h-1 bg-[#a6916e]"></div>
+                    <div className="absolute top-0 left-0 w-full h-1 gold-gradient-bg"></div>
                   )}
 
                   {challenge.paused && (
@@ -546,22 +698,28 @@ const ChallengeControlPage = ({ params }) => {
                     </div>
                   )}
 
+                  {!challenge.timer.isRunning && !challenge.paused && !challenge.completed && (
+                    <div className="absolute top-0 right-0 px-2 py-1 bg-gray-800 text-gray-300 text-xs rounded-bl">
+                      Timer nicht aktiv
+                    </div>
+                  )}
+
                   <div className="p-4">
                     <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-lg font-medium text-[#a6916e]">{game.name}</h3>
+                      <h3 className="text-lg font-medium gold-text">{game.name}</h3>
                       {game.completed && (
                         <span className="px-2 py-1 bg-green-900 text-green-300 text-xs rounded-full">Abgeschlossen</span>
                       )}
-                      {!game.completed && !challenge.paused && (
+                      {!game.completed && !challenge.paused && !challenge.completed && challenge.timer.isRunning && (
                         <>
                           {pendingGameIndex === index && (
-                            <span className="px-2 py-1 bg-[#8b7a5e] text-black text-xs rounded-full flex items-center">
+                            <span className="px-2 py-1 gold-gradient-bg text-black text-xs rounded-full flex items-center">
                               <span className="w-2 h-2 bg-black rounded-full mr-1 animate-pulse"></span>
                               Wird aktiviert...
                             </span>
                           )}
                           {activeGameIndex === index && pendingGameIndex !== index && (
-                            <span className="px-2 py-1 bg-[#a6916e] text-black text-xs rounded-full flex items-center">
+                            <span className="px-2 py-1 gold-bg text-black text-xs rounded-full flex items-center">
                               <span className="w-2 h-2 bg-black rounded-full mr-1 animate-pulse"></span>
                               Aktiv
                             </span>
@@ -573,13 +731,13 @@ const ChallengeControlPage = ({ params }) => {
                     <div className="flex justify-between items-center mb-3">
                       <div>
                         <div className="text-xs text-gray-400">Fortschritt</div>
-                        <div className="text-base font-semibold text-[#a6916e]">
+                        <div className="text-base font-semibold gold-text">
                           {game.currentWins} / {game.winCount} Siege
                         </div>
                       </div>
                       <div>
                         <div className="text-xs text-gray-400">Zeit</div>
-                        <div className="text-base font-mono text-[#a6916e]">
+                        <div className="text-base font-mono gold-shimmer-text">
                           {formatTime(gameTimers[index]?.value || 0)}
                         </div>
                       </div>
@@ -587,7 +745,7 @@ const ChallengeControlPage = ({ params }) => {
 
                     <div className="w-full bg-[#2a2a2a] h-2 rounded-full mb-4 overflow-hidden">
                       <div
-                        className="h-full bg-[#a6916e] rounded-full"
+                        className="h-full gold-progress-bar rounded-full"
                         style={{ width: `${(game.currentWins / game.winCount) * 100}%` }}
                       ></div>
                     </div>
@@ -595,15 +753,15 @@ const ChallengeControlPage = ({ params }) => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (!challenge.paused) {
+                        if (!challenge.paused && !challenge.completed && challenge.timer.isRunning) {
                           increaseWinCount(index, e);
                         }
                       }}
-                      disabled={game.completed || isSwitchingGame || challenge.paused}
-                      className={`w-full py-2 px-4 rounded font-medium text-sm 
-                      ${game.completed || isSwitchingGame || challenge.paused
+                      disabled={game.completed || isSwitchingGame || challenge.paused || challenge.completed || !challenge.timer.isRunning}
+                      className={`w-full py-2 px-4 rounded font-medium text-sm
+        ${game.completed || isSwitchingGame || challenge.paused || challenge.completed || !challenge.timer.isRunning
                           ? 'bg-gray-800 text-gray-600'
-                          : 'bg-[#a6916e] text-black hover:bg-[#8b7a5e]'
+                          : 'gold-bg text-black gold-pulse'
                         } transition duration-300`}
                     >
                       Sieg +1

@@ -42,7 +42,7 @@ export async function PUT(request, context) {
       return NextResponse.json({ message: 'Nicht autorisiert' }, { status: 401 });
     }
 
-    const { action, gameIndex, challengeTime, gameTimers, pauseTime, isPauseRunning } = await request.json();
+    const { action, gameIndex, challengeTime, gameTimers, pauseTime, isPauseRunning, forfeited } = await request.json();
 
     let challenge = await Challenge.findById(id);
 
@@ -117,6 +117,26 @@ export async function PUT(request, context) {
         }
         break;
 
+      case 'stop-all-timers':
+        challenge.timer.isRunning = false;
+        challenge.timer.duration = req.body.challengeTime || challenge.timer.duration;
+        challenge.completed = true;
+
+        challenge.games.forEach((game, index) => {
+          game.timer.isRunning = false;
+          if (req.body.gameTimers && req.body.gameTimers[index] !== undefined) {
+            game.timer.duration = req.body.gameTimers[index];
+          }
+        });
+
+        if (challenge.pauseTimer) {
+          challenge.pauseTimer.isRunning = false;
+          challenge.pauseTimer.duration = req.body.pauseTime || challenge.pauseTimer.duration;
+        }
+
+        await challenge.save();
+        break;
+
       case 'pause-challenge-timer':
         if (challenge.timer.isRunning) {
           const now = new Date();
@@ -138,6 +158,23 @@ export async function PUT(request, context) {
         break;
 
       case 'stop-challenge-timer':
+        if (challenge.timer.startTime) {
+          const endTime = new Date();
+          const runningTime = endTime - challenge.timer.startTime;
+          challenge.timer.endTime = endTime;
+          challenge.timer.duration = runningTime - challenge.timer.pausedTime;
+          challenge.timer.isRunning = false;
+          challenge.completed = true;
+          challenge.completedAt = endTime;
+
+          if (challenge.pauseTimer) {
+            challenge.pauseTimer.isRunning = false;
+          }
+        }
+        break;
+
+      case 'forfied-challenge':
+        challenge.forfeited = true;
         if (challenge.timer.startTime) {
           const endTime = new Date();
           const runningTime = endTime - challenge.timer.startTime;

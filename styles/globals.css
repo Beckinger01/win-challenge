@@ -8,6 +8,21 @@
   --color-foreground: var(--foreground);
   --font-int: 'Inter', sans-serif;
   --font-pop: 'Poppins', sans-serif;
+
+  --gold-primary: #d9a441;
+  --gold-secondary: #bf9b30;
+  --gold-tertiary: #c8a951;
+  --gold-hover: #b08a2e;
+  --gold-dark: #907020;
+  --gold-light: #e4c675;
+  --gold-gradient: linear-gradient(
+    135deg,
+    var(--gold-light) 0%,
+    var(--gold-primary) 25%,
+    var(--gold-tertiary) 50%,
+    var(--gold-secondary) 75%,
+    var(--gold-light) 100%
+  );
 }
 
 body {
@@ -141,6 +156,87 @@ body {
   background: linear-gradient(to right, #ffea7a, #d5a44d, #ffea7a);
   background-clip: text;
   color: transparent;
+}
+
+.gold-text {
+  color: var(--gold-primary);
+  text-shadow: 0 0 2px rgba(255, 215, 0, 0.3), 0 0 5px rgba(255, 215, 0, 0.2);
+}
+
+.gold-bg {
+  background-color: var(--gold-primary);
+  transition: background-color 0.3s ease;
+}
+
+.gold-bg:hover {
+  background-color: var(--gold-hover);
+}
+
+.gold-border {
+  border: 1px solid var(--gold-primary);
+  transition: border-color 0.3s ease;
+}
+
+.gold-border:hover {
+  border-color: var(--gold-light);
+}
+
+.gold-gradient-bg {
+  background: var(--gold-gradient);
+  background-size: 200% 200%;
+  animation: shimmerEffect 6s infinite linear;
+}
+
+.gold-gradient-border {
+  border: 2px solid transparent;
+  background: linear-gradient(#151515, #151515) padding-box,
+              var(--gold-gradient) border-box;
+  background-size: 200% 200%;
+  animation: shimmerEffect 6s infinite linear;
+}
+
+.gold-shimmer-text {
+  color: var(--gold-primary);
+  background-image: var(--gold-gradient);
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmerEffect 3s infinite linear;
+}
+
+.gold-progress-bar {
+  background: var(--gold-gradient);
+  background-size: 200% 200%;
+  animation: shimmerEffect 3s infinite linear;
+}
+
+@keyframes shimmerEffect {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.gold-pulse {
+  animation: pulseEffect 2s infinite;
+}
+
+@keyframes pulseEffect {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(255, 215, 0, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0);
+  }
 }
 
 .primary_btn {

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
+    "framer-motion": "^12.6.2",
     "lucide-react": "^0.483.0",
     "mongodb": "^6.15.0",
     "mongoose": "^8.12.1",

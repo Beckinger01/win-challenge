@@ -106,8 +106,23 @@ const NoScrollView = ({
             {/* Three columns layout */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-4 h-[calc(100vh-400px)]">
                 {/* Left column - Scrollable game list */}
-                <div className="bg-[#151515] rounded-lg gold-gradient-border p-4 overflow-hidden">
+                <div className="bg-[#151515] rounded-lg gold-gradient-border p-4 overflow-hidden relative">
                     <h2 className="text-xl font-semibold mb-3 gold-shimmer-text border-b border-[#333333] pb-2">Spiele Liste</h2>
+
+                    {/* Füge das Overlay hinzu, identisch zur mittleren Spalte */}
+                    {isSwitchingGame && (
+                        <div className="absolute inset-0 bg-[#151515] bg-opacity-90 flex items-center justify-center z-10 rounded-lg">
+                            <div className="text-center">
+                                <div className="gold-shimmer-text text-2xl font-semibold mb-2">Spiel wird gewechselt</div>
+                                <div className="flex justify-center">
+                                    <div className="w-2 h-2 gold-bg rounded-full animate-pulse mx-1"></div>
+                                    <div className="w-2 h-2 gold-bg rounded-full animate-pulse mx-1 animation-delay-200"></div>
+                                    <div className="w-2 h-2 gold-bg rounded-full animate-pulse mx-1 animation-delay-400"></div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     <div ref={scrollRef} className="overflow-y-auto h-[calc(100%-40px)] pr-1 auto-scroll">
                         {challenge.games.map((game, index) => (
                             <div

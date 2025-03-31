@@ -47,19 +47,19 @@ export default function SignUpForm() {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto p-6 bg-gray-900 rounded-2xl border border-gray-800">
-      <h2 className="text-2xl font-bold mb-6 text-center primary-text-gradient">Registrieren</h2>
+    <div className="w-full max-w-md mx-auto p-6">
+      <h2 className="text-2xl font-bold mb-6 text-center gold-shimmer-text">Register</h2>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
+        <div className="mb-4 p-3 bg-red-900 border border-red-700 text-white rounded-md">
           {error}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="username" className="block text-sm font-medium text-white mb-1">
-            Benutzername
+          <label htmlFor="username" className="block text-sm font-medium gold-text mb-1">
+            Usernmae
           </label>
           <input
             type="text"
@@ -67,14 +67,14 @@ export default function SignUpForm() {
             name="username"
             value={formData.username}
             onChange={handleChange}
-            placeholder="Ihr Benutzername"
+            placeholder="Your Username"
             required
-            className="w-full px-3 py-2 border text-white border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 bg-[#151515] border border-[#a6916e] text-white rounded-md focus:outline-none focus:gold-border"
           />
         </div>
 
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-white mb-1">
+          <label htmlFor="email" className="block text-sm font-medium gold-text mb-1">
             E-Mail
           </label>
           <input
@@ -83,15 +83,15 @@ export default function SignUpForm() {
             name="email"
             value={formData.email}
             onChange={handleChange}
-            placeholder="ihre.email@beispiel.de"
+            placeholder="your.email@beispiel.de"
             required
-            className="w-full px-3 py-2 border text-white border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 bg-[#151515] border border-[#a6916e] text-white rounded-md focus:outline-none focus:gold-border"
           />
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-white mb-1">
-            Passwort
+          <label htmlFor="password" className="block text-sm font-medium gold-text mb-1">
+            Password
           </label>
           <input
             type="password"
@@ -101,24 +101,27 @@ export default function SignUpForm() {
             onChange={handleChange}
             placeholder="••••••••"
             required
-            className="w-full px-3 py-2 border text-white border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 bg-[#151515] border border-[#a6916e] text-white rounded-md focus:outline-none focus:gold-border"
           />
         </div>
 
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full py-2 px-4 primary-gradient hover:bg-blue-700 text-gray-900 font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
+          className={`w-full py-3 px-4 text-black font-medium rounded-md transition-colors ${isLoading
+            ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+            : 'gold-gradient-bg gold-pulse cursor-pointer'
+            }`}
         >
-          {isLoading ? 'Wird bearbeitet...' : 'Registrieren'}
+          {isLoading ? 'Processing...' : 'Register'}
         </button>
       </form>
 
       <div className="mt-6 text-center">
-        <p className="text-sm text-gray-600">
-          Bereits registriert?{' '}
-          <Link href="/login" className="primary-text-gradient hover:text-blue-800">
-            Anmelden
+        <p className="text-sm text-gray-400">
+          Already registered?{' '}
+          <Link href="/login" className="gold-text hover:text-[#f0d080] transition-colors">
+            Sign In
           </Link>
         </p>
       </div>

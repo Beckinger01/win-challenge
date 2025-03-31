@@ -76,15 +76,15 @@ const Settings = () => {
   };
 
   if (!session) {
-    return <div className="text-white">Bitte melde dich an, um deine Einstellungen zu sehen.</div>;
+    return <div className="text-white">Please SignIn to see your Settings</div>;
   }
 
   return (
-    <div className='p-6 rounded-lg bg-gray-800 border border-[#a6916e]'>
-      <h2 className="text-2xl text-white font-bold mb-6">Kontoeinstellungen</h2>
+    <div className='p-6 rounded-lg bg-[#1f1a14] border border-[#a6916e]'>
+      <h2 className="text-2xl text-white font-bold mb-6">Account Settings</h2>
 
       <div className="text-gray-400 mb-6">
-        <span>Angemeldet als: </span>
+        <span>Signed in as: </span>
         <span className="text-[#a6916e]">{maskEmail(session?.user.email)}</span>
       </div>
 

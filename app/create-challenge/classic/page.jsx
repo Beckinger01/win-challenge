@@ -12,7 +12,7 @@ const KlassischOption = () => {
         {session?.user ? (
           <KlassischChallengeForm />
         ) : (
-          <h1 className="text-white text-center text-2xl">Du bist nicht eingeloggt!</h1>
+          <h1 className="text-white text-center text-2xl">You are not logged in!</h1>
         )}
       </div>
     </div>

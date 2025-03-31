@@ -76,9 +76,9 @@ const PasswordEditForm = ({ showMessage }) => {
   };
 
   return (
-    <div className="p-4 bg-gray-900 rounded-lg border border-gray-700">
+    <div className="p-4 rounded-lg border border-[#a6916e]">
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-white text-lg font-semibold">Passwort</h3>
+        <h3 className="text-white text-lg font-semibold">Password</h3>
         {!editing && (
           <button
             className="text-white cursor-pointer hover:text-blue-400 transition-colors"
@@ -94,7 +94,7 @@ const PasswordEditForm = ({ showMessage }) => {
       ) : (
         <div className="space-y-3">
           <div className="relative">
-            <label className="block text-sm text-gray-300 mb-1">Aktuelles Passwort</label>
+            <label className="block text-sm text-gray-300 mb-1">Current Password</label>
             <div className="relative">
               <input
                 type={showCurrentPassword ? "text" : "password"}
@@ -115,7 +115,7 @@ const PasswordEditForm = ({ showMessage }) => {
           </div>
 
           <div className="relative">
-            <label className="block text-sm text-gray-300 mb-1">Neues Passwort</label>
+            <label className="block text-sm text-gray-300 mb-1">New Password</label>
             <div className="relative">
               <input
                 type={showNewPassword ? "text" : "password"}
@@ -136,7 +136,7 @@ const PasswordEditForm = ({ showMessage }) => {
           </div>
 
           <div>
-            <label className="block text-sm text-gray-300 mb-1">Passwort bestätigen</label>
+            <label className="block text-sm text-gray-300 mb-1">Confirm Password</label>
             <input
               type={showNewPassword ? "text" : "password"}
               value={confirmPassword}
@@ -157,14 +157,14 @@ const PasswordEditForm = ({ showMessage }) => {
               onClick={cancelEditing}
               disabled={isSubmitting}
             >
-              <X size={16} /> Abbrechen
+              <X size={16} /> Cancel
             </button>
             <button
               className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center gap-1"
               onClick={handleUpdate}
               disabled={isSubmitting}
             >
-              <Save size={16} /> Speichern
+              <Save size={16} /> Save
             </button>
           </div>
         </div>

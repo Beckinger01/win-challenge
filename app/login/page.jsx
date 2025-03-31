@@ -11,7 +11,7 @@ const Login = () => {
 
   useEffect(() => {
     if (session?.user) {
-      router.push('/erstelle-challenge');
+      router.push('/create-challenge');
     }
   }, [session, router]);
 
@@ -50,7 +50,7 @@ const Login = () => {
                   fill="#EA4335"
                 />
               </svg>
-              Mit Google anmelden
+              Sign In with Google
             </button>
           </div>
         )}

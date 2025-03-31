@@ -76,7 +76,7 @@ const Home = () => {
             animate="visible"
             custom={3}
           >
-            Win-Challenge offers you a platform where you can define, track and share your challenges with the community.
+            This Win-Challenge Webapp offers you a place, where you can define and track challenges.
           </motion.p>
 
           <motion.p
@@ -109,7 +109,7 @@ const Home = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.98 }}
           >
-            <Link href="/live" className="bg-transparent border-2 border-white px-8 py-4 rounded-md text-white font-bold text-lg transition-all duration-300 hover-gold-gradient inline-block">
+            <Link href="/live" className="bg-transparent border-2 border-white px-8 py-4 rounded-md text-white font-bold text-lg inline-block">
               Watch Live
             </Link>
           </motion.div>

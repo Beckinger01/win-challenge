@@ -68,9 +68,9 @@ const UsernameEditForm = ({ session, onUpdate, showMessage }) => {
   };
 
   return (
-    <div className="mb-6 p-4 bg-gray-900 rounded-lg border border-gray-700">
+    <div className="mb-6 p-4  rounded-lg border border-[#a6916e]">
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-white text-lg font-semibold">Benutzername</h3>
+        <h3 className="text-white text-lg font-semibold">Username</h3>
         {!editing && (
           <button
             className="text-white cursor-pointer hover:text-blue-400 transition-colors"
@@ -105,12 +105,12 @@ const UsernameEditForm = ({ session, onUpdate, showMessage }) => {
 
           {showHint && (
             <div className="text-gray-300 text-sm bg-gray-800 p-2 rounded-md">
-              <p>Anforderungen für Benutzernamen:</p>
+              <p>Username requirements</p>
               <ul className="list-disc pl-5 mt-1">
-                <li>8-20 Zeichen lang</li>
-                <li>Nur Buchstaben, Zahlen, Punkte und Unterstriche</li>
-                <li>Darf nicht mit Punkt oder Unterstrich beginnen oder enden</li>
-                <li>Keine zwei aufeinanderfolgenden Punkte oder Unterstriche</li>
+                <li>8-20 characters.</li>
+                <li>Only letters, numbers, dots and underscores.</li>
+                <li>Can't begin or end with dots or underscores.</li>
+                <li>Not two or more dots or underscores in a row.</li>
               </ul>
             </div>
           )}
@@ -127,14 +127,14 @@ const UsernameEditForm = ({ session, onUpdate, showMessage }) => {
               onClick={cancelEditing}
               disabled={isSubmitting}
             >
-              <X size={16} /> Abbrechen
+              <X size={16} /> Cancel
             </button>
             <button
               className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center gap-1"
               onClick={handleUpdate}
               disabled={isSubmitting}
             >
-              <Save size={16} /> Speichern
+              <Save size={16} /> Save
             </button>
           </div>
         </div>

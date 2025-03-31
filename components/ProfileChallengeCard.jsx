@@ -39,7 +39,7 @@ const ProfileChallengeCard = ({ name, timer = {}, id, startDate, type, gameCount
   return (
     <div
       onClick={handleCardClick}
-      className={`relative cursor-pointer bg-gray-800 rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow duration-300 border ${isActive ? 'border-green-500 border-2' : 'border-[#a6916e]'} hover:border-blue-600`}
+      className={`relative cursor-pointer bg-[#1f1a14] rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow duration-300 border ${isActive ? 'border-green-500 border-2' : 'border-[#a6916e]'} hover:border-blue-600`}
     >
       {isActive && (
         <div className="absolute top-0 right-0 bg-green-500 text-white px-2 py-1 text-xs flex items-center rounded-bl-lg z-10">
@@ -51,38 +51,21 @@ const ProfileChallengeCard = ({ name, timer = {}, id, startDate, type, gameCount
       <h3 className="text-white text-4xl font-semibold mb-3 text-center">{name}</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-y-10">
         <div className="text-center text-white text-1xl font-semibold">
-          Typ: {type}
+          Type: {type}
         </div>
         <div className="text-center text-white text-1xl font-semibold">
-          Am: {formattedDate}
+          Date: {formattedDate}
         </div>
-        <div className="text-center primary-text-gradient text-3xl font-semibold">
+        <div className="text-center gold-shimmer-text text-3xl font-semibold">
           {formattedTime}
         </div>
-        <div className="text-center primary-text-gradient text-3xl font-semibold">
+        <div className="text-center gold-shimmer-text text-3xl font-semibold">
           {gameCount == 1 ? (
             `${gameCount} Spiel`
           ) : (
             `${gameCount} Spiele`
           )}
         </div>
-      </div>
-
-      <div className="action-buttons flex justify-center gap-3 mt-6" onClick={(e) => e.stopPropagation()}>
-        <Link
-          href={`/challenge/${id}`}
-          className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium"
-        >
-          Controller
-        </Link>
-        <Link
-          href={`/challenge/public/${id}`}
-          className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-sm font-medium"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Zuschauer
-        </Link>
       </div>
     </div>
   );

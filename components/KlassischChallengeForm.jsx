@@ -3,13 +3,24 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Trash2 } from "lucide-react";
+import { Trash2, Plus } from "lucide-react";
+import { motion } from "framer-motion";
+
+const fadeInUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.6,
+      ease: "easeOut"
+    }
+  }
+};
 
 const KlassischChallengeForm = () => {
   const { data: session } = useSession();
   const router = useRouter();
-
-  console.log("Session data:", session);
 
   const [challengeName, setChallengeName] = useState("");
   const [games, setGames] = useState([
@@ -19,7 +30,7 @@ const KlassischChallengeForm = () => {
   const [errorMessage, setErrorMessage] = useState("");
 
   const handleAddGame = () => {
-    setGames([...games, { name: "", winCount: 0 }]);
+    setGames([...games, { name: "", winCount: 1 }]);
   };
 
   const handleRemoveGame = (index) => {
@@ -47,22 +58,22 @@ const KlassischChallengeForm = () => {
     e.preventDefault();
 
     if (!challengeName.trim()) {
-      setErrorMessage("Bitte gib einen Namen für die Challenge ein.");
+      setErrorMessage("Please enter a name for the challenge.");
       return;
     }
 
     if (games.some(game => game.winCount < 1)) {
-      setErrorMessage("Anzahl Siege muss für alle Spiele mindestens 1 sein.");
+      setErrorMessage("The number of wins must be at least 1 for all games.");
       return;
     }
 
     if (games.some(game => !game.name.trim())) {
-      setErrorMessage("Bitte gib allen Spielen einen Namen.");
+      setErrorMessage("Please give all games a name.");
       return;
     }
 
     if (!session?.user?.id) {
-      setErrorMessage("Benutzer nicht gefunden oder nicht eingeloggt. Bitte melde dich erneut an.");
+      setErrorMessage("User not found or not logged in. Please log in again.");
       return;
     }
 
@@ -72,15 +83,13 @@ const KlassischChallengeForm = () => {
     try {
       const challengeData = {
         name: challengeName,
-        type: "Klassisch",
+        type: "Classic",
         games: games.map(game => ({
           name: game.name,
           winCount: game.winCount
         })),
         creator: session.user.id
       };
-
-      console.log("Submitting challenge data:", JSON.stringify(challengeData));
 
       const response = await fetch("/api/challenges", {
         method: "POST",
@@ -92,11 +101,10 @@ const KlassischChallengeForm = () => {
 
       if (!response.ok) {
         const responseData = await response.text();
-        let errorMessage = "Fehler beim Erstellen der Challenge";
+        let errorMessage = "Error creating the challenge";
         try {
           const errorData = JSON.parse(responseData);
           errorMessage = errorData.message || errorMessage;
-          console.error("Server error details:", errorData);
         } catch (e) {
           console.error("Raw server error:", responseData);
         }
@@ -104,26 +112,19 @@ const KlassischChallengeForm = () => {
       }
 
       const responseData = await response.json();
-      console.log("Challenge-Antwort:", responseData);
-
       const challengeId = responseData.id || responseData._id || responseData.challengeId;
-      console.log("Extrahierte Challenge-ID:", challengeId);
 
       if (challengeId) {
-        console.log("Redirect-URL:", `/challenge/${challengeId}`);
         setTimeout(() => {
-          const path = `/challenge/${challengeId}`;
-          console.log("Navigiere zu:", path);
-          router.push(path);
+          router.push(`/challenge/${challengeId}`);
         }, 500);
       } else {
-        console.warn("Keine Challenge-ID in der Antwort gefunden, Fallback zum Dashboard");
-        router.push("/dashboard");
+        router.push("/");
       }
 
     } catch (error) {
       console.error("Error creating challenge:", error);
-      setErrorMessage(error.message || "Ein Fehler ist aufgetreten. Bitte versuche es erneut.");
+      setErrorMessage(error.message || "An error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -131,67 +132,91 @@ const KlassischChallengeForm = () => {
 
   if (!session?.user) {
     return (
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-white">Du bist nicht eingeloggt!</h1>
+      <div className="flex items-center justify-center h-screen">
+        <motion.div
+          className="rounded-lg gold-gradient-border p-8 max-w-md text-center"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          style={{ backgroundColor: '#151515' }}
+        >
+          <h1 className="text-2xl font-bold gold-text mb-4">You are not logged in!</h1>
+          <p className="text-gray-300 mb-6">To create a challenge, you must log in.</p>
+          <a href="/login" className="gold-gradient-bg px-6 py-3 rounded-md text-black font-bold inline-block gold-pulse">
+            SignIn now
+          </a>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-2xl">
-      <h1 className="text-4xl font-bold text-white mb-8 text-center">Klassische Win-Challenge erstellen</h1>
+    <motion.div
+      className="w-full max-w-2xl mx-auto px-4 py-8"
+      initial="hidden"
+      animate="visible"
+      variants={fadeInUp}
+    >
+      <h1 className="text-4xl font-bold gold-shimmer-text mb-8 text-center">Create a classic Challenge</h1>
       <form
         onSubmit={handleSubmit}
-        className="w-full bg-gray-900 rounded-2xl border border-[#a6916e] p-6"
+        className="w-full gold-gradient-border rounded-xl p-6"
+        style={{ backgroundColor: '#1a1a1a' }}
       >
         <div className="mb-6">
-          <label htmlFor="challengeName" className="block text-white text-lg font-medium mb-2">
-            Challenge-Name
+          <label htmlFor="challengeName" className="block gold-text text-lg font-medium mb-2">
+            Name of Challenge
           </label>
           <input
             type="text"
             id="challengeName"
             value={challengeName}
             onChange={(e) => setChallengeName(e.target.value)}
-            placeholder="z.B. Wochenend-Challenge"
-            className="w-full px-3 py-2 border border-[#a6916e] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="e.g. Weekend-Challenge"
+            className="w-full px-4 py-3 rounded-md bg-[#151515] border border-[#a6916e] text-white focus:outline-none focus:gold-border"
             required
           />
         </div>
 
         <div className="mb-6">
-          <label className="block text-white text-lg font-medium mb-2">
-            Spiele
+          <label className="block gold-text text-lg font-medium mb-4">
+            Games
           </label>
 
           {games.map((game, index) => (
-            <div key={index} className="flex flex-col md:flex-row gap-4 mb-4 p-4 border border-[#a6916e] rounded">
+            <motion.div
+              key={index}
+              className="flex flex-col md:flex-row gap-4 mb-4 p-4 border border-[#a6916e] rounded-md"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+            >
               <div className="flex-grow">
                 <label htmlFor={`gameName-${index}`} className="block text-white text-sm mb-1">
-                  Spiel {index + 1}
+                  Game {index + 1}
                 </label>
                 <input
                   type="text"
                   id={`gameName-${index}`}
                   value={game.name}
                   onChange={(e) => handleGameChange(index, "name", e.target.value)}
-                  placeholder="z.B. Fortnite, Fall Guys B2B"
-                  className="w-full px-3 py-2 rounded  text-white border border-gray-500"
+                  placeholder="e.g. Fortnite, Fall Guys B2B"
+                  className="w-full px-4 py-3 rounded-md bg-[#151515] text-white border border-gray-700 focus:outline-none focus:border-[#a6916e]"
                   required
                 />
               </div>
 
               <div className="w-full md:w-32">
                 <label htmlFor={`winCount-${index}`} className="block text-white text-sm mb-1">
-                  Anzahl Siege
+                  Number of Wins
                 </label>
                 <input
                   type="number"
                   id={`winCount-${index}`}
                   value={game.winCount}
                   onChange={(e) => handleGameChange(index, "winCount", e.target.value)}
-                  min="1"
-                  className="w-full px-3 py-2 rounded  text-white border border-gray-500"
+                  min="0"
+                  className="w-full px-4 py-3 rounded-md bg-[#151515] text-white border border-gray-700 focus:outline-none focus:border-[#a6916e]"
                   required
                 />
               </div>
@@ -200,24 +225,26 @@ const KlassischChallengeForm = () => {
                 <button
                   type="button"
                   onClick={() => handleRemoveGame(index)}
-                  className="self-end md:self-center p-3 text-white hover:text-[#2E2E2E] rounded-full cursor-pointer hover:primary-gradient border border-[#a6916e] transition"
+                  className="self-end md:self-center p-3 text-white hover:text-black rounded-full cursor-pointer hover:gold-gradient-bg border border-[#a6916e] transition-colors"
                 >
                   <Trash2 />
                 </button>
               )}
-            </div>
+            </motion.div>
           ))}
 
           <button
             type="button"
             onClick={handleAddGame}
-            className="w-full py-2 primary-text-gradient cursor-pointer"
+            className="w-full py-3 gold-text flex items-center justify-center gap-2 cursor-pointer rounded-md hover:gold-border mt-4"
           >
-            + Spiel hinzufügen
+            <Plus size={20} />
+            <span>Add Game</span>
           </button>
         </div>
+
         {errorMessage && (
-          <div className="mb-4 p-3 bg-red-500 text-white rounded">
+          <div className="mb-6 p-4 bg-red-900 text-white rounded-md border border-red-600">
             {errorMessage}
           </div>
         )}
@@ -225,13 +252,15 @@ const KlassischChallengeForm = () => {
         <button
           type="submit"
           disabled={isSubmitting}
-          className={`w-full py-3 rounded text-white font-bold text-lg transition border border-[#a6916e] cursor-pointer
-            ${isSubmitting ? 'bg-gray-500' : 'hover:primary-gradient hover:text-[#2E2E2E]'}`}
+          className={`w-full py-4 rounded-md text-black font-bold text-lg ${isSubmitting
+              ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+              : 'gold-gradient-bg gold-pulse cursor-pointer'
+            }`}
         >
           {isSubmitting ? 'Wird erstellt...' : 'Challenge erstellen'}
         </button>
       </form>
-    </div>
+    </motion.div>
   );
 };
 

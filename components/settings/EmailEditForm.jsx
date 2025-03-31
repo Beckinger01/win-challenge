@@ -65,7 +65,7 @@ const EmailEditForm = ({ session, onUpdate, showMessage, emailMask }) => {
   };
 
   return (
-    <div className="mb-6 p-4 bg-gray-900 rounded-lg border border-gray-700">
+    <div className="mb-6 p-4  rounded-lg border-[#a6916e]">
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-white text-lg font-semibold">E-Mail</h3>
         {!editing && (
@@ -82,7 +82,7 @@ const EmailEditForm = ({ session, onUpdate, showMessage, emailMask }) => {
         <p className="text-[#a6916e]">{emailMask}</p>
       ) : (
         <div className="space-y-2">
-          <label className="block text-sm text-gray-300 mb-1">Aktuelles Passwort</label>
+          <label className="block text-sm text-gray-300 mb-1">Current E-Mail</label>
           <input
             type="password"
             value={currentPassword}
@@ -91,7 +91,7 @@ const EmailEditForm = ({ session, onUpdate, showMessage, emailMask }) => {
             placeholder="Aktuelles Passwort"
             disabled={isSubmitting}
           />
-          <label className="block text-sm text-gray-300 mb-1">Neue E-Mail</label>
+          <label className="block text-sm text-gray-300 mb-1">New E-Mail</label>
           <input
             type="email"
             value={newEmail}

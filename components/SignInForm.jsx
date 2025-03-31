@@ -38,24 +38,24 @@ export default function SignInForm() {
         router.push('/');
       }
     } catch (err) {
-      setError(err.message || 'Ein Fehler ist aufgetreten');
+      setError(err.message || 'An error has occurred');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="w-full max-w-md mx-auto p-6 bg-gray-900 rounded-2xl border border-gray-800">
-      <h2 className="text-2xl font-bold mb-6 text-center primary-text-gradient">Anmelden</h2>
+    <div className="w-full">
+      <h2 className="text-2xl font-bold mb-6 text-center gold-shimmer-text">Sign In</h2>
       {error && (
-        <div className="mb-4 p-3 bg-red-100 bg-opacity-90 text-red-700 rounded-md">
+        <div className="mb-4 p-3 bg-red-900 border border-red-700 text-white rounded-md">
           {error}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-white mb-1">
+          <label htmlFor="email" className="block text-sm font-medium gold-text mb-1">
             E-Mail
           </label>
           <input
@@ -64,15 +64,15 @@ export default function SignInForm() {
             name="email"
             value={formData.email}
             onChange={handleChange}
-            placeholder="ihre.email@beispiel.de"
+            placeholder="your.email@beispiel.com"
             required
-            className="w-full px-3 py-2 border border-[#a6916e] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 bg-[#151515] border border-[#a6916e] text-white rounded-md focus:outline-none focus:gold-border"
           />
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-white mb-1">
-            Passwort
+          <label htmlFor="password" className="block text-sm font-medium gold-text mb-1">
+            Password
           </label>
           <input
             type="password"
@@ -82,7 +82,7 @@ export default function SignInForm() {
             onChange={handleChange}
             placeholder="••••••••"
             required
-            className="w-full px-3 py-2 border border-[#a6916e] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 bg-[#151515] border border-[#a6916e] text-white rounded-md focus:outline-none focus:gold-border"
           />
         </div>
 
@@ -92,16 +92,16 @@ export default function SignInForm() {
               id="remember-me"
               name="remember-me"
               type="checkbox"
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-[#a6916e] rounded"
+              className="h-4 w-4 bg-[#151515] border-[#a6916e] rounded"
             />
-            <label htmlFor="remember-me" className="ml-2 block text-sm text-white">
-              Angemeldet bleiben
+            <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-300">
+              Stay signed in
             </label>
           </div>
 
           <div className="text-sm">
-            <Link href="#" className="primary-text-gradient cursor-pointer">
-              Passwort vergessen?
+            <Link href="#" className="gold-text hover:text-[#f0d080] transition-colors">
+              Forgot Password?
             </Link>
           </div>
         </div>
@@ -109,16 +109,19 @@ export default function SignInForm() {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full py-2 px-4 primary-gradient hover:bg-blue-700 text-gray-900 cursor-pointer font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
+          className={`w-full py-3 px-4 text-black font-medium rounded-md transition-colors ${isLoading
+              ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+              : 'gold-gradient-bg gold-pulse cursor-pointer'
+            }`}
         >
-          {isLoading ? 'Wird angemeldet...' : 'Anmelden'}
+          {isLoading ? 'Logging in...' : 'Sign In'}
         </button>
 
         <div className="pt-4 text-center">
-          <p className='text-sm text-gray-600'>
-            Noch keinen Account?{' '}
-            <Link href="/signup" className="primary-text-gradient hover:text-blue-400 text-sm">
-              Registrieren
+          <p className='text-sm text-gray-400'>
+          No account yet?{' '}
+            <Link href="/signup" className="gold-text hover:text-[#f0d080] transition-colors">
+              Register
             </Link>
           </p>
         </div>

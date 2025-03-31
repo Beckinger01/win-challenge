@@ -39,21 +39,21 @@ const Profile = () => {
   if (!session) {
     return (
       <section className="w-full h-screen flex-col justify-center items-center">
-        <h1 className="text-white text-2xl text-center mt-10">Bitte melde dich an, um dein Profil zu sehen.</h1>
+        <h1 className="text-white text-2xl text-center mt-10">Please SignIn to see your profile.</h1>
       </section>
     );
   }
 
   return (
     <section className="w-full min-h-screen flex flex-col p-6">
-      <h1 className="text-white text-5xl font-bold mb-2">Hallo, {session?.user.username || session?.user.name}!</h1>
+      <h1 className="text-white text-5xl font-bold mb-2">Hello, {session?.user.username || session?.user.name}!</h1>
 
       <div className="mt-8 mb-4 text-center">
         <h2 className="text-white text-4xl pb-4 font-semibold border-b-4 border-[#a6916e]">Challenges</h2>
       </div>
 
       {loading ? (
-        <h1 className="text-white w-full text-center text-3xl">Challenges werden geladen...</h1>
+        <h1 className="text-white w-full text-center text-3xl">Challenges loading</h1>
       ) : error ? (
         <p className="text-red-500">{error}</p>
       ) : challenges.length > 0 ? (
@@ -62,7 +62,7 @@ const Profile = () => {
             <div className="mb-8">
               <h2 className="text-white text-3xl font-semibold mb-6 flex items-center">
                 <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2 animate-pulse"></span>
-                Aktive Challenges
+                Active Challenges
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {challenges
@@ -83,7 +83,7 @@ const Profile = () => {
             </div>
           )}
           <div>
-            <h2 className="text-white text-3xl font-semibold mb-6 border-b-2 border-[#a6916e] pb-2">Alle Challenges</h2>
+            <h2 className="text-white text-3xl font-semibold mb-6 border-b-2 border-[#a6916e] pb-2">All Challenges</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {challenges.map((challenge) => (
                 <ProfileChallengeCard
@@ -101,11 +101,11 @@ const Profile = () => {
           </div>
         </>
       ) : (
-        <p className="text-white">Du hast noch keine Challenges erstellt.</p>
+        <p className="text-white">You haven't created a challenge xet.</p>
       )}
 
       <div className="mt-8 mb-4 text-center">
-        <h2 className="text-white text-4xl pb-4 font-semibold border-b-4 border-[#a6916e]">Einstellungen</h2>
+        <h2 className="text-white text-4xl pb-4 font-semibold border-b-4 border-[#a6916e]">Settings</h2>
       </div>
       <Settings />
     </section>

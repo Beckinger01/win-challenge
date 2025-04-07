@@ -64,7 +64,7 @@ const ChallengeSchema = new Schema({
   type: {
     type: String,
     required: [true, "Der Challenge-Typ wird benötigt"],
-    enum: ["Klassisch", "Münzwurf", "FirstTry"]
+    enum: ["Classic", "CoinToss", "FirstTry"]
   },
   games: {
     type: [GameSchema],

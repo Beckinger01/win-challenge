@@ -49,7 +49,7 @@ const Profile = () => {
       <h1 className="text-white text-5xl font-bold mb-2">Hello, {session?.user.username || session?.user.name}!</h1>
 
       <div className="mt-8 mb-4 text-center">
-        <h2 className="text-white text-4xl pb-4 font-semibold border-b-4 border-[#a6916e]">Challenges</h2>
+        <h2 className="text-white text-5xl pb-4 font-semibold">Challenges</h2>
       </div>
 
       {loading ? (
@@ -58,12 +58,10 @@ const Profile = () => {
         <p className="text-red-500">{error}</p>
       ) : challenges.length > 0 ? (
         <>
-          {challenges.some(challenge => !challenge.completed && (challenge.timer?.isRunning || challenge.games.some(game => game.timer?.isRunning))) && (
-            <div className="mb-8">
-              <h2 className="text-white text-3xl font-semibold mb-6 flex items-center">
-                <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2 animate-pulse"></span>
-                Active Challenges
-              </h2>
+          <div className="mb-8">
+            <h2 className="text-white text-3xl font-semibold mb-6 border-b-2 border-[#a6916e] pb-2">Active Challenges</h2>
+
+            {challenges.some(challenge => !challenge.completed && (challenge.timer?.isRunning || challenge.games.some(game => game.timer?.isRunning))) ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {challenges
                   .filter(challenge => !challenge.completed && (challenge.timer?.isRunning || challenge.games.some(game => game.timer?.isRunning)))
@@ -80,8 +78,10 @@ const Profile = () => {
                     />
                   ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <h1 className="text-white text-2xl mb-3 w-full text-center">Currently no active challenges</h1>
+            )}
+          </div>
           <div>
             <h2 className="text-white text-3xl font-semibold mb-6 border-b-2 border-[#a6916e] pb-2">All Challenges</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -101,7 +101,7 @@ const Profile = () => {
           </div>
         </>
       ) : (
-        <p className="text-white">You haven't created a challenge xet.</p>
+        <p className="text-white w-full text-center text-2xl py-5">You haven't created a challenge yet.</p>
       )}
 
       <div className="mt-8 mb-4 text-center">

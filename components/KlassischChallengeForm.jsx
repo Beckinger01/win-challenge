@@ -30,7 +30,7 @@ const KlassischChallengeForm = () => {
   const [errorMessage, setErrorMessage] = useState("");
 
   const handleAddGame = () => {
-    setGames([...games, { name: "", winCount: 1 }]);
+    setGames([...games, { name: "", winCount: 0 }]);
   };
 
   const handleRemoveGame = (index) => {

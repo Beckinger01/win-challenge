@@ -184,6 +184,20 @@ export async function PUT(request, context) {
           challenge.completed = true;
           challenge.completedAt = endTime;
 
+          // Stoppe alle Game-Timer
+          challenge.games.forEach((game) => {
+            if (game.timer.isRunning) {
+              game.timer.isRunning = false;
+
+              // Falls der Game-Timer eine Startzeit hatte, berechne und setze die Dauer
+              if (game.timer.startTime) {
+                const gameRunningTime = endTime - game.timer.startTime;
+                game.timer.endTime = endTime;
+                game.timer.duration = gameRunningTime - game.timer.pausedTime;
+              }
+            }
+          });
+
           if (challenge.pauseTimer) {
             challenge.pauseTimer.isRunning = false;
           }

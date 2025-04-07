@@ -39,8 +39,7 @@ const TypeWinCard = ({ type, desc, link, isAvailable = true, comingSoon = false 
         {/* Footer section - fixed at bottom */}
         <div className="mt-auto pt-3 md:pt-4">
           {isAvailable ? (
-            <div className="gold-gradient-bg text-black font-medium py-2 md:py-3 px-4 md:px-6 rounded-md inline-block text-sm md:text-base">
-              Choose
+            <div>
             </div>
           ) : (
             <div className="bg-gray-800 text-gray-500 font-medium py-2 md:py-3 px-4 md:px-6 rounded-md inline-block text-sm md:text-base">

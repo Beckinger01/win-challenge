@@ -262,7 +262,7 @@ const Home = () => {
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
                 >
-                  Customizable Timers
+                  Live View
                 </motion.h3>
                 <motion.p
                   className="text-gray-300 mb-4 text-lg"
@@ -271,7 +271,7 @@ const Home = () => {
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" }}
                 >
-                  Take control of your challenge timing with our fully customizable timer system.
+                  Watch challenges live.
                 </motion.p>
                 <motion.p
                   className="text-gray-300 text-lg"
@@ -280,7 +280,7 @@ const Home = () => {
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: 0.4, ease: "easeOut" }}
                 >
-                  Set individual timers for each game to track the individual game time, so you can see how long you need for each game.
+                   Watch your the challenge of your favorite streamer or frined live and at realtime. See all standings and timers of challenge and Games.
                 </motion.p>
               </div>
             </motion.div>

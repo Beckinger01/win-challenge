@@ -104,143 +104,182 @@ const ChallengePublicPage = ({ params }) => {
   }, [socket, activeGameIndex]);
 
   if (loading) {
-    return <div className="flex justify-center items-center h-screen">Lädt Challenge...</div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#a6916e]"></div>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="flex justify-center items-center h-screen text-red-500">Fehler: {error}</div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="gold-gradient-border p-8 rounded-lg text-center" style={{ backgroundColor: '#1a1a1a' }}>
+          <h2 className="text-2xl font-bold gold-text mb-4">Error</h2>
+          <p className="text-red-500">{error}</p>
+        </div>
+      </div>
+    );
   }
 
   if (!challenge) {
-    return <div className="flex justify-center items-center h-screen">Challenge nicht gefunden</div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="gold-gradient-border p-8 rounded-lg text-center" style={{ backgroundColor: '#1a1a1a' }}>
+          <h2 className="text-2xl font-bold gold-text mb-4">Not Found</h2>
+          <p className="text-gray-300">Challenge not found</p>
+        </div>
+      </div>
+    );
   }
 
-  const totalWins = challenge.games.reduce((sum, game) => sum + game.currentWins, 0);
-  const totalRequired = challenge.games.reduce((sum, game) => sum + game.winCount, 0);
-  const progressPercentage = Math.round((totalWins / totalRequired) * 100);
+  // Zähle abgeschlossene Spiele statt Siege
+  const completedGames = challenge.games.filter(game => game.completed).length;
+  const totalGames = challenge.games.length;
+  const progressPercentage = Math.round((completedGames / totalGames) * 100);
 
   const activeGame = challenge.games[activeGameIndex];
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-center mb-2">{challenge.name}</h1>
-        <p className="text-center text-gray-600">{challenge.type} Challenge</p>
+    <div className="container mx-auto p-4 max-w-7xl">
+      <div className="mb-10 text-center">
+        <h1 className="text-4xl md:text-5xl font-bold gold-shimmer-text mb-3">{challenge.name}</h1>
+        <p className="text-gray-300">{challenge.type} Challenge</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div className="bg-gray-100 p-6 rounded-lg">
-          <h2 className="text-xl font-semibold mb-4">Challenge Timer</h2>
-          <div className="text-4xl font-mono text-center mb-4">{formatTime(challengeTime)}</div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+        {/* Challenge Timer */}
+        <div className="gold-gradient-border rounded-lg p-6" style={{ backgroundColor: '#1a1a1a' }}>
+          <h2 className="text-xl font-semibold mb-4 gold-text">Challenge Timer</h2>
+          <div className="text-5xl font-mono text-center mb-4 gold-shimmer-text">{formatTime(challengeTime)}</div>
 
           <div className="flex items-center justify-center">
-            <div className={`px-3 py-1 rounded-full ${challenge.completed
-                ? 'bg-green-100 text-green-800'
-                : challenge.paused
-                  ? 'bg-yellow-100 text-yellow-800'
-                  : challenge.timer.isRunning
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'bg-gray-100 text-gray-800'
+            <div className={`px-3 py-1 rounded-full ${challenge.forfeited
+                ? 'bg-red-900 text-red-300'
+                : challenge.completed
+                  ? 'bg-green-900 text-green-300'
+                  : challenge.paused
+                    ? 'bg-yellow-900 text-yellow-300'
+                    : challenge.timer.isRunning
+                      ? 'gold-gradient-bg text-black'
+                      : 'bg-gray-800 text-gray-300'
               }`}>
-              {challenge.completed
-                ? 'Abgeschlossen'
-                : challenge.paused
-                  ? 'Pausiert'
-                  : challenge.timer.isRunning
-                    ? 'Läuft'
-                    : 'Nicht gestartet'}
+              {challenge.forfeited
+                ? 'Forfeited'
+                : challenge.completed
+                  ? 'Completed'
+                  : challenge.paused
+                    ? 'Paused'
+                    : challenge.timer.isRunning
+                      ? 'Running'
+                      : 'Not Started'}
             </div>
           </div>
         </div>
 
-        <div className="bg-gray-100 p-6 rounded-lg">
-          <h2 className="text-xl font-semibold mb-4">Gesamtfortschritt</h2>
-          <div className="text-4xl font-bold text-center mb-4">{progressPercentage}%</div>
+        {/* Overall Progress */}
+        <div className="gold-gradient-border rounded-lg p-6" style={{ backgroundColor: '#1a1a1a' }}>
+          <h2 className="text-xl font-semibold mb-4 gold-text">Overall Progress</h2>
+          <div className="text-5xl font-bold text-center mb-4 gold-shimmer-text">{progressPercentage}%</div>
 
-          <div className="w-full bg-gray-200 rounded-full h-4 mb-4">
+          <div className="w-full bg-[#2a2a2a] rounded-full h-4 mb-4 overflow-hidden">
             <div
-              className="bg-blue-600 h-4 rounded-full"
+              className={`${challenge.forfeited ? 'bg-red-600' : 'gold-gradient-bg'} h-4 rounded-full transition-all duration-500`}
               style={{ width: `${progressPercentage}%` }}
             ></div>
           </div>
 
-          <div className="text-center">
-            <span className="font-medium">{totalWins}</span> von <span className="font-medium">{totalRequired}</span> Siegen
+          <div className="text-center text-gray-300">
+            <span className="font-medium gold-text">{completedGames}</span> of <span className="font-medium gold-text">{totalGames}</span> games completed
+            {challenge.forfeited && <div className="text-red-400 mt-2">Challenge was forfeited</div>}
           </div>
         </div>
 
-        <div className="bg-gray-100 p-6 rounded-lg">
-          <h2 className="text-xl font-semibold mb-4">Aktives Spiel</h2>
+        {/* Active Game */}
+        <div className="gold-gradient-border rounded-lg p-6" style={{ backgroundColor: '#1a1a1a' }}>
+          <h2 className="text-xl font-semibold mb-4 gold-text">Active Game</h2>
 
           {activeGame ? (
             <>
-              <div className="text-2xl font-bold text-center mb-4">{activeGame.name}</div>
+              <div className="text-2xl font-bold text-center mb-4 gold-shimmer-text">{activeGame.name}</div>
 
               <div className="flex justify-between mb-4">
                 <div>
-                  <div className="text-sm text-gray-500">Fortschritt</div>
-                  <div className="text-xl font-semibold">{activeGame.currentWins} / {activeGame.winCount}</div>
+                  <div className="text-sm text-gray-400">Progress</div>
+                  <div className="text-xl font-semibold gold-text">{activeGame.currentWins} / {activeGame.winCount}</div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-500">Timer</div>
-                  <div className="text-xl font-mono">{formatTime(gameTimers[activeGameIndex]?.value || 0)}</div>
+                  <div className="text-sm text-gray-400">Timer</div>
+                  <div className="text-xl font-mono gold-text">{formatTime(gameTimers[activeGameIndex]?.value || 0)}</div>
                 </div>
               </div>
 
-              <div className="w-full bg-gray-200 rounded-full h-4">
+              <div className="w-full bg-[#2a2a2a] rounded-full h-4 overflow-hidden">
                 <div
-                  className="bg-green-600 h-4 rounded-full"
+                  className="gold-gradient-bg h-4 rounded-full transition-all duration-500"
                   style={{ width: `${(activeGame.currentWins / activeGame.winCount) * 100}%` }}
                 ></div>
               </div>
             </>
           ) : (
-            <div className="text-center text-gray-500">Kein aktives Spiel</div>
+            <div className="text-center text-gray-400">
+              {challenge.forfeited
+                ? "Challenge was forfeited"
+                : challenge.completed
+                  ? "All games completed"
+                  : "No active game"}
+            </div>
           )}
         </div>
       </div>
 
-      <div className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4">Alle Spiele</h2>
+      <div className="mb-12">
+        <h2 className="text-2xl font-semibold mb-6 gold-text">All Games</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {challenge.games.map((game, index) => (
             <div
               key={index}
-              className={`p-4 rounded-lg border ${index === activeGameIndex
-                  ? 'border-blue-500 bg-blue-50'
+              className={`p-5 rounded-lg ${index === activeGameIndex && !challenge.forfeited
+                  ? 'gold-gradient-border gold-pulse'
                   : game.completed
-                    ? 'border-green-200 bg-green-50'
-                    : 'border-gray-200'
+                    ? 'border-2 border-green-600'
+                    : 'border border-[#333333]'
                 }`}
+              style={{ backgroundColor: '#1a1a1a' }}
             >
               <div className="flex justify-between items-center mb-3">
-                <h3 className="text-lg font-medium">{game.name}</h3>
+                <h3 className="text-lg font-medium gold-text">{game.name}</h3>
                 {game.completed ? (
-                  <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Abgeschlossen</span>
+                  <span className="px-2 py-1 bg-green-900 text-green-300 text-xs rounded-full">Completed</span>
+                ) : challenge.forfeited ? (
+                  <span className="px-2 py-1 bg-red-900 text-red-300 text-xs rounded-full">Forfeited</span>
                 ) : game.timer.isRunning ? (
-                  <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">Aktiv</span>
+                  <span className="px-2 py-1 gold-gradient-bg text-black text-xs rounded-full flex items-center">
+                    <span className="w-2 h-2 bg-black rounded-full mr-1 animate-pulse"></span>
+                    Active
+                  </span>
                 ) : null}
               </div>
 
               <div className="flex justify-between items-center mb-3">
                 <div>
-                  <div className="text-sm text-gray-500">Fortschritt</div>
-                  <div className="text-lg font-semibold">
-                    {game.currentWins} / {game.winCount} Siege
+                  <div className="text-sm text-gray-400">Progress</div>
+                  <div className="text-lg font-semibold gold-text">
+                    {game.currentWins} / {game.winCount} wins
                   </div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-500">Zeit</div>
-                  <div className="text-lg font-mono">
+                  <div className="text-sm text-gray-400">Time</div>
+                  <div className="text-lg font-mono gold-text">
                     {formatTime(gameTimers[index]?.value || 0)}
                   </div>
                 </div>
               </div>
 
-              <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+              <div className="w-full bg-[#2a2a2a] rounded-full h-2 mb-2 overflow-hidden">
                 <div
-                  className="bg-green-600 h-2 rounded-full transition-all duration-500"
+                  className={`${challenge.forfeited ? 'bg-red-600' : 'gold-gradient-bg'} h-2 rounded-full transition-all duration-500`}
                   style={{ width: `${(game.currentWins / game.winCount) * 100}%` }}
                 ></div>
               </div>
@@ -249,10 +288,13 @@ const ChallengePublicPage = ({ params }) => {
         </div>
       </div>
 
-      <div className="bg-blue-50 p-4 rounded-lg mb-4">
+      <div
+        className={`p-4 rounded-lg mb-4 ${isConnected ? 'gold-gradient-border' : 'border border-red-600'}`}
+        style={{ backgroundColor: '#1a1a1a' }}
+      >
         <div className="flex items-center">
-          <div className={`w-3 h-3 rounded-full mr-2 ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-          <span className="text-sm">{isConnected ? 'Live-Verbindung aktiv' : 'Keine Live-Verbindung'}</span>
+          <div className={`w-3 h-3 rounded-full mr-2 ${isConnected ? 'bg-[#a6916e] gold-pulse' : 'bg-red-500'}`}></div>
+          <span className="text-sm text-gray-300">{isConnected ? 'Live connection active' : 'No live connection'}</span>
         </div>
       </div>
     </div>

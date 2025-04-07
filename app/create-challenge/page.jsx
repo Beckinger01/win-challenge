@@ -81,7 +81,7 @@ const CreateChallenge = () => {
               Choose your type of <span className="gold-shimmer-text">Win-Challenge</span>
             </h1>
             <div className="h-1 w-32 gold-gradient-bg mx-auto my-3 rounded-full"></div>
-            <p className="text-gray-300 text-base md:text-xl max-w-3xl mx-auto">
+            <p className="text-gray-300 text-base md:text-xl py-5 max-w-3xl mx-auto">
               Each challenge type offers a unique gaming experience with different rules and challenges
             </p>
           </motion.div>

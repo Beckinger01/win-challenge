@@ -58,7 +58,7 @@ export const POST = async (request) => {
 
     const newChallenge = new Challenge({
       name: challengeData.name,
-      type: challengeData.type || "Klassisch",
+      type: challengeData.type || "Classic",
       games: challengeData.games.map(game => ({
         name: game.name,
         winCount: parseInt(game.winCount) || 1,

@@ -240,6 +240,7 @@ const ChallengeControlPage = ({ params }) => {
       socket.off('challenge-updated', handleChallengeUpdated);
     };
   }, [socket]);
+
   const saveCurrentState = async () => {
     if (!challenge) return;
 
@@ -364,6 +365,7 @@ const ChallengeControlPage = ({ params }) => {
 
   const stopChallengeTimer = async () => {
     setIsPauseRunning(false);
+
     setGameTimers(prevTimers =>
       prevTimers.map(timer => ({
         ...timer,
@@ -372,12 +374,8 @@ const ChallengeControlPage = ({ params }) => {
     );
 
     try {
-      for (let i = 0; i < gameTimers.length; i++) {
-        if (gameTimers[i].isRunning) {
-          await updateChallenge('stop-game-timer', i);
-        }
-      }
       await updateChallenge('forfied-challenge');
+
       setActiveGameIndex(null);
 
       setTimeout(async () => {
@@ -385,6 +383,11 @@ const ChallengeControlPage = ({ params }) => {
         if (response.ok) {
           const refreshedData = await response.json();
           setChallenge(refreshedData);
+
+          setGameTimers(refreshedData.games.map((game) => ({
+            value: getCurrentTimerValue(game.timer),
+            isRunning: false
+          })));
         }
       }, 300);
 
@@ -392,7 +395,6 @@ const ChallengeControlPage = ({ params }) => {
       console.error("Fehler beim Stoppen der Challenge:", error);
     }
   };
-
   const switchToGame = async (index) => {
     if (index === activeGameIndex) return;
     if (challenge.games[index]?.completed) return;
@@ -451,10 +453,8 @@ const ChallengeControlPage = ({ params }) => {
     updateChallenge('increase-win-count', index);
   };
 
-  // Toggle between normal view and no-scroll view
   const toggleView = () => {
     setIsNoScrollView(!isNoScrollView);
-    // Update URL to reflect the current view without page reload
     const url = new URL(window.location);
     if (!isNoScrollView) {
       url.searchParams.set('fullscreen', 'true');
@@ -464,7 +464,6 @@ const ChallengeControlPage = ({ params }) => {
     window.history.pushState({}, '', url);
   };
 
-  // Check URL for fullscreen parameter on initial load
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const fullscreenParam = urlParams.get('fullscreen');
@@ -486,7 +485,7 @@ const ChallengeControlPage = ({ params }) => {
       <div className="flex flex-col justify-center items-center h-screen">
         <div className="text-red-500 mb-4">{error}</div>
         <Link href="/profile" className="px-4 py-2 gold-bg text-black rounded">
-          Zurück zum Profil
+          Back to Profile
         </Link>
       </div>
     );
@@ -495,9 +494,9 @@ const ChallengeControlPage = ({ params }) => {
   if (!session?.user) {
     return (
       <div className="flex flex-col justify-center items-center h-screen">
-        <div className="gold-text mb-4">Du musst eingeloggt sein, um die Challenge zu steuern</div>
+        <div className="gold-text mb-4">You must be logged in to control the challenge</div>
         <Link href={`/login?callbackUrl=/challenge/${id}`} className="px-4 py-2 gold-bg text-black rounded">
-          Zum Login
+          Back to Login
         </Link>
       </div>
     );
@@ -505,20 +504,19 @@ const ChallengeControlPage = ({ params }) => {
   if (!isAuthorized) {
     return (
       <div className="flex flex-col justify-center items-center h-screen">
-        <div className="gold-text mb-4">Du bist nicht berechtigt, diese Challenge zu steuern</div>
-        <div className="gold-text mb-4">Die Challenge kann nur vom Ersteller gesteuert werden</div>
+        <div className="gold-text mb-4">You are not authorized to control this challenge</div>
+        <div className="gold-text mb-4">The challenge can only be controlled by the creator</div>
         <Link href="/profile" className="px-4 py-2 gold-bg text-black rounded">
-          Zurück zum Profil
+          Back to Profile
         </Link>
       </div>
     );
   }
 
   if (!challenge) {
-    return <div className="flex justify-center items-center h-screen gold-shimmer-text">Challenge nicht gefunden</div>;
+    return <div className="flex justify-center items-center h-screen gold-shimmer-text">Challenge not found</div>;
   }
 
-  // If NoScrollView is active, render that component directly (without normal container)
   if (isNoScrollView) {
     return (
       <div className="min-h-screen">
@@ -533,7 +531,7 @@ const ChallengeControlPage = ({ params }) => {
               onClick={toggleView}
               className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded transition duration-300"
             >
-              Standard Ansicht
+              Standard view
             </button>
             <button
               onClick={() => {
@@ -543,7 +541,7 @@ const ChallengeControlPage = ({ params }) => {
               }}
               className="px-3 py-1 gold-bg text-black text-sm rounded transition duration-300"
             >
-              Link kopieren
+              Copy Link
             </button>
           </div>
         </div>
@@ -570,7 +568,6 @@ const ChallengeControlPage = ({ params }) => {
     );
   }
 
-  // Regular view (original view)
   const minutesSinceLastSave = Math.floor((Date.now() - lastSaveTime) / 60000);
 
   return (
@@ -587,7 +584,7 @@ const ChallengeControlPage = ({ params }) => {
               onClick={toggleView}
               className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded transition duration-300"
             >
-              No-Scroll Ansicht
+              Presentation view
             </button>
             <button
               onClick={() => {
@@ -597,7 +594,7 @@ const ChallengeControlPage = ({ params }) => {
               }}
               className="px-3 py-1 gold-bg text-black text-sm rounded transition duration-300"
             >
-              Link kopieren
+              Copy Link
             </button>
           </div>
         </div>
@@ -606,7 +603,7 @@ const ChallengeControlPage = ({ params }) => {
           <div className="max-w-md mx-auto mb-10">
             <div className="py-2 px-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold gold-text">Pausierte Zeit:</h2>
+                <h2 className="text-lg font-semibold gold-text">Paused Time:</h2>
                 <div className="text-2xl font-mono gold-shimmer-text ml-4">{formatTime(pauseTime)}</div>
               </div>
             </div>
@@ -632,39 +629,39 @@ const ChallengeControlPage = ({ params }) => {
               disabled={challenge.completed || (!challenge.timer.startTime && !challenge.timer.isRunning)}
               className={`flex-1 px-6 py-4 rounded-md text-xl font-medium ${challenge.completed || (!challenge.timer.startTime && !challenge.timer.isRunning) ? 'bg-gray-800 text-gray-600' : 'bg-red-700 text-white hover:bg-red-800'} transition duration-300`}
             >
-              Aufgeben
+              Give Up
             </button>
           </div>
 
           <div className="flex items-center justify-center mb-8">
             <span className="font-medium text-lg mr-2 text-gray-400">Status:</span>
             {challenge.forfeited ? (
-              <span className="text-red-500 text-lg font-bold">Aufgegeben</span>
+              <span className="text-red-500 text-lg font-bold">Forfieted</span>
             ) : challenge.completed ? (
-              <span className="text-green-500 text-lg font-bold">Abgeschlossen</span>
+              <span className="text-green-500 text-lg font-bold">Finished</span>
             ) : challenge.paused ? (
-              <span className="text-yellow-500 text-lg font-bold">Pausiert</span>
+              <span className="text-yellow-500 text-lg font-bold">Paused</span>
             ) : challenge.timer.isRunning ? (
-              <span className="text-blue-500 text-lg font-bold">Läuft</span>
+              <span className="text-blue-500 text-lg font-bold">Running</span>
             ) : (
-              <span className="text-gray-500 text-lg font-bold">Nicht gestartet</span>
+              <span className="text-gray-500 text-lg font-bold">Not started</span>
             )}
           </div>
         </div>
 
         <div className="max-w-6xl mx-auto">
           <div className="bg-[#151515] rounded-lg gold-gradient-border p-6 shadow-lg relative">
-            <h2 className="text-xl font-semibold mb-4 gold-shimmer-text border-b border-[#333333] pb-2">Spiele</h2>
+            <h2 className="text-xl font-semibold mb-4 gold-shimmer-text border-b border-[#333333] pb-2">Games</h2>
             {challenge.completed && (
               <div className="absolute top-0 right-0 px-2 py-1 bg-red-800 text-red-300 text-xs rounded-bl">
-                Challenge beendet
+                Challenge ended
               </div>
             )}
-            <p className="text-sm text-gray-400 mb-6">Wähle ein Spiel, um seinen Timer zu starten. Das aktive Spiel wird mit einem farbigen Rahmen markiert.</p>
+            <p className="text-sm text-gray-400 mb-6">Select a game to start its timer. The active game will be marked with a colored border.</p>
             {isSwitchingGame && (
               <div className="absolute inset-0 bg-[#151515] bg-opacity-90 flex items-center justify-center z-10 rounded-lg">
                 <div className="text-center">
-                  <div className="gold-shimmer-text text-2xl font-semibold mb-2">Spiel wird gewechselt</div>
+                  <div className="gold-shimmer-text text-2xl font-semibold mb-2">Changing Game</div>
                   <div className="flex justify-center">
                     <div className="w-2 h-2 gold-bg rounded-full animate-pulse mx-1"></div>
                     <div className="w-2 h-2 gold-bg rounded-full animate-pulse mx-1 animation-delay-200"></div>
@@ -694,13 +691,13 @@ const ChallengeControlPage = ({ params }) => {
 
                   {challenge.paused && (
                     <div className="absolute top-0 right-0 px-2 py-1 bg-yellow-800 text-yellow-300 text-xs rounded-bl">
-                      Pausiert
+                      Paused
                     </div>
                   )}
 
                   {!challenge.timer.isRunning && !challenge.paused && !challenge.completed && (
                     <div className="absolute top-0 right-0 px-2 py-1 bg-gray-800 text-gray-300 text-xs rounded-bl">
-                      Timer nicht aktiv
+                      Timer not active
                     </div>
                   )}
 
@@ -708,20 +705,20 @@ const ChallengeControlPage = ({ params }) => {
                     <div className="flex justify-between items-center mb-4">
                       <h3 className="text-lg font-medium gold-text">{game.name}</h3>
                       {game.completed && (
-                        <span className="px-2 py-1 bg-green-900 text-green-300 text-xs rounded-full">Abgeschlossen</span>
+                        <span className="px-2 py-1 bg-green-900 text-green-300 text-xs rounded-full">Finished</span>
                       )}
                       {!game.completed && !challenge.paused && !challenge.completed && challenge.timer.isRunning && (
                         <>
                           {pendingGameIndex === index && (
                             <span className="px-2 py-1 gold-gradient-bg text-black text-xs rounded-full flex items-center">
                               <span className="w-2 h-2 bg-black rounded-full mr-1 animate-pulse"></span>
-                              Wird aktiviert...
+                              Activating...
                             </span>
                           )}
                           {activeGameIndex === index && pendingGameIndex !== index && (
                             <span className="px-2 py-1 gold-bg text-black text-xs rounded-full flex items-center">
                               <span className="w-2 h-2 bg-black rounded-full mr-1 animate-pulse"></span>
-                              Aktiv
+                              Active
                             </span>
                           )}
                         </>
@@ -730,13 +727,13 @@ const ChallengeControlPage = ({ params }) => {
 
                     <div className="flex justify-between items-center mb-3">
                       <div>
-                        <div className="text-xs text-gray-400">Fortschritt</div>
+                        <div className="text-xs text-gray-400">Progress</div>
                         <div className="text-base font-semibold gold-text">
-                          {game.currentWins} / {game.winCount} Siege
+                          {game.currentWins} / {game.winCount} Wins
                         </div>
                       </div>
                       <div>
-                        <div className="text-xs text-gray-400">Zeit</div>
+                        <div className="text-xs text-gray-400">Time</div>
                         <div className="text-base font-mono gold-shimmer-text">
                           {formatTime(gameTimers[index]?.value || 0)}
                         </div>
@@ -764,7 +761,7 @@ const ChallengeControlPage = ({ params }) => {
                           : 'gold-bg text-black gold-pulse'
                         } transition duration-300`}
                     >
-                      Sieg +1
+                      Win +1
                     </button>
                   </div>
                 </div>

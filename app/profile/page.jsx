@@ -105,7 +105,7 @@ const Profile = () => {
       )}
 
       <div className="mt-8 mb-4 text-center">
-        <h2 className="text-white text-4xl pb-4 font-semibold border-b-4 border-[#a6916e]">Settings</h2>
+        <h2 className="text-white text-5xl pb-4 font-semibold border-b-4 border-[#a6916e]">Settings</h2>
       </div>
       <Settings />
     </section>

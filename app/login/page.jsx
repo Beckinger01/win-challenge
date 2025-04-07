@@ -9,12 +9,6 @@ const Login = () => {
   const { data: session } = useSession();
   const router = useRouter();
 
-  useEffect(() => {
-    if (session?.user) {
-      router.push('/create-challenge');
-    }
-  }, [session, router]);
-
   return (
     <section className='w-full h-screen flex items-center justify-center'>
       <div className="max-w-md w-full px-6 py-8">

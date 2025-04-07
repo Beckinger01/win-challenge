@@ -30,40 +30,33 @@ const staggerContainer = {
 };
 
 const CreateChallenge = () => {
-  const { data: session, status } = useSession(); // Füge status hinzu
+  const { data: session, status } = useSession();
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
-  // Setze isClient auf true nach dem ersten Render
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // Überprüfe die Bildschirmgröße
   useEffect(() => {
     const checkScreenSize = () => {
       setIsSmallScreen(window.innerWidth < 768);
     };
-
-    // Initial prüfen
     checkScreenSize();
 
-    // Event Listener für Größenänderungen
     window.addEventListener('resize', checkScreenSize);
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
-  // Zeige Ladeindikator, wenn die Session noch geladen wird
   if (!isClient || status === "loading") {
     return (
-      <section className="w-full min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#a6916e]"></div>
-      </section>
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 gold-border"></div>
+      </div>
     );
   }
 
   return (
-    // Verwende max-h-screen nur auf größeren Bildschirmen
     <section className={`w-full ${isSmallScreen ? 'min-h-screen' : 'max-h-screen'} flex flex-col justify-center items-center px-4 py-10 md:py-8`}>
       {session?.user ? (
         <motion.div
@@ -128,7 +121,7 @@ const CreateChallenge = () => {
         >
           <h1 className="text-2xl font-bold gold-text mb-4">You are not logged in!</h1>
           <p className="text-gray-300 mb-6">To create a challenge, you must log in.</p>
-          <a href="/login" className="gold-gradient-bg px-6 py-3 rounded-md text-black font-bold inline-block gold-pulse">
+          <a href="/login?returnUrl=/create-challenge" className="gold-gradient-bg px-6 py-3 rounded-md text-black font-bold inline-block gold-pulse">
             SignIn now!
           </a>
         </motion.div>

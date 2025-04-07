@@ -3,6 +3,8 @@
 import React from 'react';
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 // Animations-Varianten mit korrigierter Ease-Funktion
 const fadeInUp = {
@@ -30,6 +32,17 @@ const staggerContainer = {
 };
 
 const Home = () => {
+  const { data: session} = useSession();
+  const router = useRouter();
+
+  const handleCreateChallenge = () => {
+    if (session?.user) {
+      router.push('/create-challenge');
+    }else {
+      router.push('/login');
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
@@ -100,9 +113,9 @@ const Home = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.98 }}
           >
-            <Link href="/login" className="gold-gradient-bg px-8 py-4 rounded-md text-black font-bold text-lg shadow-lg inline-block">
+            <button onClick={handleCreateChallenge} className="gold-gradient-bg px-8 py-4 rounded-md text-black font-bold text-lg shadow-lg inline-block">
               Create Challenge
-            </Link>
+            </button>
           </motion.div>
 
           <motion.div

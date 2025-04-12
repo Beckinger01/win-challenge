@@ -32,7 +32,7 @@ const ChallengeControlPage = ({ params }) => {
     creatorId: null,
     userEmail: null
   });
-  // New state for view toggle
+  // State for view toggle
   const [isNoScrollView, setIsNoScrollView] = useState(false);
 
   // Handle toggling the navbar visibility when changing views
@@ -395,6 +395,7 @@ const ChallengeControlPage = ({ params }) => {
       console.error("Fehler beim Stoppen der Challenge:", error);
     }
   };
+
   const switchToGame = async (index) => {
     if (index === activeGameIndex) return;
     if (challenge.games[index]?.completed) return;
@@ -482,8 +483,8 @@ const ChallengeControlPage = ({ params }) => {
 
   if (error) {
     return (
-      <div className="flex flex-col justify-center items-center h-screen">
-        <div className="text-red-500 mb-4">{error}</div>
+      <div className="flex flex-col justify-center items-center h-screen p-4">
+        <div className="text-red-500 mb-4 text-center">{error}</div>
         <Link href="/profile" className="px-4 py-2 gold-bg text-black rounded">
           Back to Profile
         </Link>
@@ -493,19 +494,20 @@ const ChallengeControlPage = ({ params }) => {
 
   if (!session?.user) {
     return (
-      <div className="flex flex-col justify-center items-center h-screen">
-        <div className="gold-text mb-4">You must be logged in to control the challenge</div>
+      <div className="flex flex-col justify-center items-center h-screen p-4">
+        <div className="gold-text mb-4 text-center">You must be logged in to control the challenge</div>
         <Link href={`/login?callbackUrl=/challenge/${id}`} className="px-4 py-2 gold-bg text-black rounded">
           Back to Login
         </Link>
       </div>
     );
   }
+
   if (!isAuthorized) {
     return (
-      <div className="flex flex-col justify-center items-center h-screen">
-        <div className="gold-text mb-4">You are not authorized to control this challenge</div>
-        <div className="gold-text mb-4">The challenge can only be controlled by the creator</div>
+      <div className="flex flex-col justify-center items-center h-screen p-4">
+        <div className="gold-text mb-4 text-center">You are not authorized to control this challenge</div>
+        <div className="gold-text mb-4 text-center">The challenge can only be controlled by the creator</div>
         <Link href="/profile" className="px-4 py-2 gold-bg text-black rounded">
           Back to Profile
         </Link>
@@ -514,22 +516,26 @@ const ChallengeControlPage = ({ params }) => {
   }
 
   if (!challenge) {
-    return <div className="flex justify-center items-center h-screen gold-shimmer-text">Challenge not found</div>;
+    return (
+      <div className="flex justify-center items-center h-screen p-4 gold-shimmer-text text-center">
+        Challenge not found
+      </div>
+    );
   }
 
   if (isNoScrollView) {
     return (
       <div className="min-h-screen">
-        <div className="flex justify-between items-center px-4 py-3 border-b">
-          <h1 className="text-xl font-bold gold-shimmer-text">{challenge.name}</h1>
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-center px-4 py-3 border-b gap-2">
+          <h1 className="text-xl font-bold gold-shimmer-text truncate max-w-[200px] sm:max-w-none">{challenge.name}</h1>
+          <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-center">
             <div className="flex items-center">
-              <div className={`w-2 h-2 rounded-full mr-2 ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-              <span className="text-sm text-gray-400">{isConnected ? 'Verbunden' : 'Offline'}</span>
+              <div className={`w-2 h-2 rounded-full mr-1 ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              <span className="text-xs sm:text-sm text-gray-400">{isConnected ? 'Verbunden' : 'Offline'}</span>
             </div>
             <button
               onClick={toggleView}
-              className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded transition duration-300"
+              className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-white text-xs sm:text-sm rounded transition duration-300"
             >
               Standard view
             </button>
@@ -539,7 +545,7 @@ const ChallengeControlPage = ({ params }) => {
                 navigator.clipboard.writeText(url);
                 alert('Link zur Zuschauerseite wurde in die Zwischenablage kopiert!');
               }}
-              className="px-3 py-1 gold-bg text-black text-sm rounded transition duration-300"
+              className="px-2 py-1 gold-bg text-black text-xs sm:text-sm rounded transition duration-300"
             >
               Copy Link
             </button>
@@ -573,16 +579,17 @@ const ChallengeControlPage = ({ params }) => {
   return (
     <div className="min-h-screen">
       <div className="container mx-auto px-4 pt-4">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold gold-shimmer-text">{challenge.name}</h1>
-          <div className="flex items-center gap-4">
+        {/* Header with connection and views */}
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-3">
+          <h1 className="text-xl sm:text-2xl font-bold gold-shimmer-text text-center sm:text-left">{challenge.name}</h1>
+          <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-center">
             <div className="flex items-center">
-              <div className={`w-2 h-2 rounded-full mr-2 ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-              <span className="text-sm text-gray-400">{isConnected ? 'Verbunden' : 'Offline'}</span>
+              <div className={`w-2 h-2 rounded-full mr-1 ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              <span className="text-xs sm:text-sm text-gray-400">{isConnected ? 'Verbunden' : 'Offline'}</span>
             </div>
             <button
               onClick={toggleView}
-              className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded transition duration-300"
+              className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-white text-xs sm:text-sm rounded transition duration-300"
             >
               Presentation view
             </button>
@@ -592,76 +599,83 @@ const ChallengeControlPage = ({ params }) => {
                 navigator.clipboard.writeText(url);
                 alert('Link zur Zuschauerseite wurde in die Zwischenablage kopiert!');
               }}
-              className="px-3 py-1 gold-bg text-black text-sm rounded transition duration-300"
+              className="px-2 py-1 gold-bg text-black text-xs sm:text-sm rounded transition duration-300"
             >
               Copy Link
             </button>
           </div>
         </div>
-        <div className="flex flex-col items-center justify-center mb-10">
-          <div className="text-9xl font-mono font-bold gold-shimmer-text">{formatTime(challengeTime)}</div>
-          <div className="max-w-md mx-auto mb-10">
+
+        {/* Timer and control section */}
+        <div className="flex flex-col items-center justify-center mb-8">
+          <div className="text-5xl sm:text-7xl md:text-9xl font-mono font-bold gold-shimmer-text mb-3">{formatTime(challengeTime)}</div>
+          <div className="w-full max-w-md mx-auto mb-6">
             <div className="py-2 px-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold gold-text">Paused Time:</h2>
-                <div className="text-2xl font-mono gold-shimmer-text ml-4">{formatTime(pauseTime)}</div>
+                <h2 className="text-base sm:text-lg font-semibold gold-text">Paused Time:</h2>
+                <div className="text-lg sm:text-2xl font-mono gold-shimmer-text ml-4">{formatTime(pauseTime)}</div>
               </div>
             </div>
           </div>
 
-          <div className="flex justify-center space-x-6 w-full max-w-xl mb-6">
+          {/* Control buttons */}
+          <div className="flex justify-center flex-wrap sm:flex-nowrap gap-3 sm:space-x-6 w-full max-w-xl mb-6">
             <button
               onClick={startChallengeTimer}
               disabled={challenge.timer.isRunning || challenge.completed}
-              className={`flex-1 px-6 py-4 rounded-md text-xl font-medium ${challenge.timer.isRunning || challenge.completed ? 'bg-gray-800 text-gray-600' : 'gold-bg text-black gold-pulse'} transition duration-300`}
+              className={`flex-1 px-4 py-3 sm:px-6 sm:py-4 rounded-md text-base sm:text-xl font-medium ${challenge.timer.isRunning || challenge.completed ? 'bg-gray-800 text-gray-600' : 'gold-bg text-black gold-pulse'} transition duration-300`}
             >
               Start
             </button>
             <button
               onClick={pauseChallengeTimer}
               disabled={!challenge.timer.isRunning || challenge.completed}
-              className={`flex-1 px-6 py-4 rounded-md text-xl font-medium ${!challenge.timer.isRunning || challenge.completed ? 'bg-gray-800 text-gray-600' : 'gold-bg text-black'} transition duration-300`}
+              className={`flex-1 px-4 py-3 sm:px-6 sm:py-4 rounded-md text-base sm:text-xl font-medium ${!challenge.timer.isRunning || challenge.completed ? 'bg-gray-800 text-gray-600' : 'gold-bg text-black'} transition duration-300`}
             >
               Pause
             </button>
             <button
               onClick={stopChallengeTimer}
               disabled={challenge.completed || (!challenge.timer.startTime && !challenge.timer.isRunning)}
-              className={`flex-1 px-6 py-4 rounded-md text-xl font-medium ${challenge.completed || (!challenge.timer.startTime && !challenge.timer.isRunning) ? 'bg-gray-800 text-gray-600' : 'bg-red-700 text-white hover:bg-red-800'} transition duration-300`}
+              className={`flex-1 px-4 py-3 sm:px-6 sm:py-4 rounded-md text-base sm:text-xl font-medium ${challenge.completed || (!challenge.timer.startTime && !challenge.timer.isRunning) ? 'bg-gray-800 text-gray-600' : 'bg-red-700 text-white hover:bg-red-800'} transition duration-300`}
             >
               Give Up
             </button>
           </div>
 
-          <div className="flex items-center justify-center mb-8">
-            <span className="font-medium text-lg mr-2 text-gray-400">Status:</span>
+          {/* Status indicator */}
+          <div className="flex items-center justify-center mb-6">
+            <span className="font-medium text-base sm:text-lg mr-2 text-gray-400">Status:</span>
             {challenge.forfeited ? (
-              <span className="text-red-500 text-lg font-bold">Forfieted</span>
+              <span className="text-red-500 text-base sm:text-lg font-bold">Forfieted</span>
             ) : challenge.completed ? (
-              <span className="text-green-500 text-lg font-bold">Finished</span>
+              <span className="text-green-500 text-base sm:text-lg font-bold">Finished</span>
             ) : challenge.paused ? (
-              <span className="text-yellow-500 text-lg font-bold">Paused</span>
+              <span className="text-yellow-500 text-base sm:text-lg font-bold">Paused</span>
             ) : challenge.timer.isRunning ? (
-              <span className="text-blue-500 text-lg font-bold">Running</span>
+              <span className="text-blue-500 text-base sm:text-lg font-bold">Running</span>
             ) : (
-              <span className="text-gray-500 text-lg font-bold">Not started</span>
+              <span className="text-gray-500 text-base sm:text-lg font-bold">Not started</span>
             )}
           </div>
         </div>
 
+        {/* Games section */}
         <div className="max-w-6xl mx-auto">
-          <div className="bg-[#151515] rounded-lg gold-gradient-border p-6 shadow-lg relative">
-            <h2 className="text-xl font-semibold mb-4 gold-shimmer-text border-b border-[#333333] pb-2">Games</h2>
+          <div className="bg-[#151515] rounded-lg gold-gradient-border p-4 sm:p-6 shadow-lg relative">
+            <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 gold-shimmer-text border-b border-[#333333] pb-2">Games</h2>
             {challenge.completed && (
               <div className="absolute top-0 right-0 px-2 py-1 bg-red-800 text-red-300 text-xs rounded-bl">
                 Challenge ended
               </div>
             )}
-            <p className="text-sm text-gray-400 mb-6">Select a game to start its timer. The active game will be marked with a colored border.</p>
+            <p className="text-xs sm:text-sm text-gray-400 mb-4 sm:mb-6">Select a game to start its timer. The active game will be marked with a colored border.</p>
+
+            {/* Loading overlay */}
             {isSwitchingGame && (
               <div className="absolute inset-0 bg-[#151515] bg-opacity-90 flex items-center justify-center z-10 rounded-lg">
                 <div className="text-center">
-                  <div className="gold-shimmer-text text-2xl font-semibold mb-2">Changing Game</div>
+                  <div className="gold-shimmer-text text-xl sm:text-2xl font-semibold mb-2">Changing Game</div>
                   <div className="flex justify-center">
                     <div className="w-2 h-2 gold-bg rounded-full animate-pulse mx-1"></div>
                     <div className="w-2 h-2 gold-bg rounded-full animate-pulse mx-1 animation-delay-200"></div>
@@ -671,14 +685,15 @@ const ChallengeControlPage = ({ params }) => {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {/* Games grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
               {challenge.games.map((game, index) => (
                 <div
                   key={index}
                   onClick={() => !isSwitchingGame && !challenge.paused && !challenge.completed && challenge.timer.isRunning && switchToGame(index)}
                   className={`relative overflow-hidden rounded-lg transition-all duration-500
-    ${(isSwitchingGame || challenge.paused || challenge.completed || !challenge.timer.isRunning) ? 'opacity-50 cursor-not-allowed' : 'hover:transform hover:scale-[1.02]'}
-    ${game.completed
+                    ${(isSwitchingGame || challenge.paused || challenge.completed || !challenge.timer.isRunning) ? 'opacity-50 cursor-not-allowed' : 'hover:transform hover:scale-[1.02]'}
+                    ${game.completed
                       ? 'bg-[#1a1a1a] border-2 border-green-600'
                       : (activeGameIndex === index || pendingGameIndex === index)
                         ? 'bg-[#1f1a14] border-2 gold-gradient-border'
@@ -701,23 +716,23 @@ const ChallengeControlPage = ({ params }) => {
                     </div>
                   )}
 
-                  <div className="p-4">
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-lg font-medium gold-text">{game.name}</h3>
+                  <div className="p-3 sm:p-4">
+                    <div className="flex justify-between items-start mb-3 sm:mb-4">
+                      <h3 className="text-base sm:text-lg font-medium gold-text break-words pr-2">{game.name}</h3>
                       {game.completed && (
-                        <span className="px-2 py-1 bg-green-900 text-green-300 text-xs rounded-full">Finished</span>
+                        <span className="px-2 py-0.5 bg-green-900 text-green-300 text-xs rounded-full whitespace-nowrap">Finished</span>
                       )}
                       {!game.completed && !challenge.paused && !challenge.completed && challenge.timer.isRunning && (
                         <>
                           {pendingGameIndex === index && (
-                            <span className="px-2 py-1 gold-gradient-bg text-black text-xs rounded-full flex items-center">
-                              <span className="w-2 h-2 bg-black rounded-full mr-1 animate-pulse"></span>
+                            <span className="px-2 py-0.5 gold-gradient-bg text-black text-xs rounded-full flex items-center whitespace-nowrap">
+                              <span className="w-1.5 h-1.5 bg-black rounded-full mr-1 animate-pulse"></span>
                               Activating...
                             </span>
                           )}
                           {activeGameIndex === index && pendingGameIndex !== index && (
-                            <span className="px-2 py-1 gold-bg text-black text-xs rounded-full flex items-center">
-                              <span className="w-2 h-2 bg-black rounded-full mr-1 animate-pulse"></span>
+                            <span className="px-2 py-0.5 gold-bg text-black text-xs rounded-full flex items-center whitespace-nowrap">
+                              <span className="w-1.5 h-1.5 bg-black rounded-full mr-1 animate-pulse"></span>
                               Active
                             </span>
                           )}
@@ -725,22 +740,22 @@ const ChallengeControlPage = ({ params }) => {
                       )}
                     </div>
 
-                    <div className="flex justify-between items-center mb-3">
+                    <div className="flex justify-between items-center mb-2 sm:mb-3">
                       <div>
                         <div className="text-xs text-gray-400">Progress</div>
-                        <div className="text-base font-semibold gold-text">
+                        <div className="text-sm sm:text-base font-semibold gold-text">
                           {game.currentWins} / {game.winCount} Wins
                         </div>
                       </div>
                       <div>
                         <div className="text-xs text-gray-400">Time</div>
-                        <div className="text-base font-mono gold-shimmer-text">
+                        <div className="text-sm sm:text-base font-mono gold-shimmer-text">
                           {formatTime(gameTimers[index]?.value || 0)}
                         </div>
                       </div>
                     </div>
 
-                    <div className="w-full bg-[#2a2a2a] h-2 rounded-full mb-4 overflow-hidden">
+                    <div className="w-full bg-[#2a2a2a] h-1.5 sm:h-2 rounded-full mb-3 sm:mb-4 overflow-hidden">
                       <div
                         className="h-full gold-progress-bar rounded-full"
                         style={{ width: `${(game.currentWins / game.winCount) * 100}%` }}
@@ -755,7 +770,7 @@ const ChallengeControlPage = ({ params }) => {
                         }
                       }}
                       disabled={game.completed || isSwitchingGame || challenge.paused || challenge.completed || !challenge.timer.isRunning}
-                      className={`w-full py-2 px-4 rounded font-medium text-sm
+                      className={`w-full py-1.5 sm:py-2 px-3 sm:px-4 rounded font-medium text-xs sm:text-sm
         ${game.completed || isSwitchingGame || challenge.paused || challenge.completed || !challenge.timer.isRunning
                           ? 'bg-gray-800 text-gray-600'
                           : 'gold-bg text-black gold-pulse'

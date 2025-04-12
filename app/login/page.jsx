@@ -1,11 +1,13 @@
 "use client"
 
+import { Suspense } from 'react';
 import SignInForm from '@components/SignInForm';
 import { signIn, useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-const Login = () => {
+// Separate Komponente, die useSearchParams verwendet
+function LoginContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -70,6 +72,20 @@ const Login = () => {
         )}
       </div>
     </section>
+  );
+}
+
+// Hauptkomponente mit Suspense-Boundary
+const Login = () => {
+  return (
+    <Suspense fallback={
+      <div className="w-full h-screen bg-base flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+        <p className="text-white ml-3">Loading...</p>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 };
 

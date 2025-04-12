@@ -17,6 +17,10 @@ const CookieBanner = () => {
             setTimeout(() => {
                 setIsVisible(true);
             }, 1000);
+        } else if (cookieConsent === "all") {
+            // Initialize analytics if user already consented
+            initializeGoogleAnalytics();
+            initializeGoogleAdSense();
         }
 
         // Detect browser language for first visit
@@ -34,7 +38,8 @@ const CookieBanner = () => {
         localStorage.setItem("preferredLanguage", language);
         setIsVisible(false);
 
-        // Here you can initialize your analytics and advertising scripts
+        // Initialize analytics and advertising scripts
+        initializeGoogleAnalytics();
         initializeGoogleAdSense();
     };
 
@@ -51,20 +56,33 @@ const CookieBanner = () => {
         localStorage.setItem("preferredLanguage", lang);
     };
 
+    // Google Analytics initialization function
+    const initializeGoogleAnalytics = () => {
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-V4JSECSYVT', {
+            page_path: window.location.pathname,
+            anonymize_ip: true
+        });
+
+        console.log("Google Analytics initialized");
+    };
+
     // Google AdSense initialization function
     const initializeGoogleAdSense = () => {
         // This would be where you initialize Google AdSense
         // Usually by loading a script tag
 
-        // Example:
-        /*
         const script = document.createElement("script");
         script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js";
         script.async = true;
         script.crossOrigin = "anonymous";
-        script.dataset.adClient = "ca-pub-YOUR_ADSENSE_ID"; // Your AdSense publisher ID
+        // Replace with your AdSense publisher ID when you have it
+        script.dataset.adClient = "ca-pub-YOUR_ADSENSE_ID";
         document.head.appendChild(script);
-        */
+
+        console.log("Google AdSense initialized");
     };
 
     if (!isVisible) return null;
@@ -78,7 +96,7 @@ const CookieBanner = () => {
                             <div className="text-white">
                                 <h3 className="text-lg font-semibold gold-text mb-2">Wir verwenden Cookies</h3>
                                 <p className="text-sm mb-3">
-                                    Diese Website verwendet Cookies, um deine Erfahrung zu verbessern. Einige Cookies sind für den Betrieb dieser Seite notwendig, während andere uns helfen, deine Nutzererfahrung zu verbessern und Werbung anzuzeigen (einschließlich Google AdSense). Du kannst selbst entscheiden, welche Cookies du zulassen möchtest. Weitere Informationen findest du in unserer{" "}
+                                    Diese Website verwendet Cookies, um deine Erfahrung zu verbessern. Einige Cookies sind für den Betrieb dieser Seite notwendig, während andere uns helfen, deine Nutzererfahrung zu verbessern (Google Analytics) und Werbung anzuzeigen (Google AdSense). Du kannst selbst entscheiden, welche Cookies du zulassen möchtest. Weitere Informationen findest du in unserer{" "}
                                     <Link href="/data-policy" className="text-blue-400 hover:underline">
                                         Datenschutzerklärung
                                     </Link>.
@@ -88,7 +106,7 @@ const CookieBanner = () => {
                             <div className="text-white">
                                 <h3 className="text-lg font-semibold gold-text mb-2">We Use Cookies</h3>
                                 <p className="text-sm mb-3">
-                                    This website uses cookies to enhance your experience. Some cookies are necessary for the operation of this site, while others help us improve your user experience and display advertising (including Google AdSense). You can decide which cookies you want to allow. For more information, please see our{" "}
+                                    This website uses cookies to enhance your experience. Some cookies are necessary for the operation of this site, while others help us analyze usage (Google Analytics) and display advertising (Google AdSense). You can decide which cookies you want to allow. For more information, please see our{" "}
                                     <Link href="/data-policy" className="text-blue-400 hover:underline">
                                         Privacy Policy
                                     </Link>.

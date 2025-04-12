@@ -65,7 +65,7 @@ const EmailEditForm = ({ session, onUpdate, showMessage, emailMask }) => {
   };
 
   return (
-    <div className="mb-6 p-4  rounded-lg border-[#a6916e]">
+    <div className="mb-6 p-4  rounded-lg border border-[#a6916e]">
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-white text-lg font-semibold">E-Mail</h3>
         {!editing && (

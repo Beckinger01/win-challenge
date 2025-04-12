@@ -5,8 +5,8 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import CookieBanner from '@components/CookieBanner';
 
-// Animations-Varianten mit korrigierter Ease-Funktion
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
   visible: (custom) => ({
@@ -15,7 +15,7 @@ const fadeInUp = {
     transition: {
       delay: custom * 0.2,
       duration: 0.8,
-      ease: "easeOut" // Vereinfachte Ease-Funktion statt der problematischen Bezier-Kurve
+      ease: "easeOut"
     }
   })
 };
@@ -42,6 +42,14 @@ const Home = () => {
       router.push('/login');
     }
   };
+
+  const handleCallToAction = () => {
+    if (session?.user) {
+      router.push('/create-challenge');
+    } else {
+      router.push('/login');
+    }
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -113,16 +121,22 @@ const Home = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.98 }}
           >
+            {session?.user ? ( 
             <button onClick={handleCreateChallenge} className="gold-gradient-bg px-8 py-4 rounded-md text-black font-bold text-lg shadow-lg inline-block">
               Create Challenge
             </button>
+            ) : (
+              <button onClick={handleCreateChallenge} className="gold-gradient-bg px-8 py-4 rounded-md text-black font-bold text-lg shadow-lg inline-block">
+                Sign In
+              </button>
+            )}
           </motion.div>
 
           <motion.div
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.98 }}
           >
-            <Link href="/live" className="bg-transparent border-2 border-white px-8 py-4 rounded-md text-white font-bold text-lg inline-block">
+            <Link href="/search-challenge" className="bg-transparent border-2 border-white px-8 py-4 rounded-md text-white font-bold text-lg inline-block">
               Watch Live
             </Link>
           </motion.div>
@@ -336,9 +350,9 @@ const Home = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.98 }}
           >
-            <Link href="/login" className="inline-block gold-gradient-bg px-10 py-4 rounded-md text-black font-bold text-lg shadow-xl">
+            <button onClick={handleCallToAction} className="inline-block gold-gradient-bg px-10 py-4 rounded-md text-black font-bold text-lg shadow-xl">
               Get Started
-            </Link>
+            </button>
           </motion.div>
         </motion.div>
       </section>
@@ -404,22 +418,23 @@ const Home = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" }}
             >
-              <Link href="/terms" className="text-gray-300 hover:text-white transition-colors">
+              <Link href="/terms-of-service" className="text-gray-300 hover:text-white transition-colors">
                 Terms of Service
               </Link>
-              <Link href="/privacy" className="text-gray-300 hover:text-white transition-colors">
+              <Link href="/data-policy" className="text-gray-300 hover:text-white transition-colors">
                 Data Policy
               </Link>
               <Link href="/refund" className="text-gray-300 hover:text-white transition-colors">
                 Refund Policy
               </Link>
-              <Link href="/about" className="text-gray-300 hover:text-white transition-colors">
-                Imprint/About
+              <Link href="/impressum" className="text-gray-300 hover:text-white transition-colors">
+                Impressum
               </Link>
             </motion.div>
           </motion.div>
         </div>
       </footer>
+      <CookieBanner />
     </div>
   );
 };

@@ -34,51 +34,60 @@ function Nav() {
 
   return (
     <nav className="w-full p-4 flex justify-end items-center gap-4 fixed top-0 z-50">
-      {session?.user ? (
-        <div className="relative" ref={dropdownRef}>
-          <button
-            onClick={() => setShowDropdown(!showDropdown)}
-            className="bg-[#1f1a14] border border-[#a6916e] p-2 rounded-full cursor-pointer"
-          >
-            <UserRound color="#d9a441" />
-          </button>
+      <div className="relative" ref={dropdownRef}>
+        <button
+          onClick={() => setShowDropdown(!showDropdown)}
+          className="bg-[#1f1a14] border border-[#a6916e] p-2 rounded-full cursor-pointer"
+        >
+          <UserRound color="#d9a441" />
+        </button>
 
-          {showDropdown && (
-            <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-[#1f1a14] border border-[#a6916e] z-50">
-              <div className="py-1">
+        {showDropdown && (
+          <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-[#1f1a14] border border-[#a6916e] z-50">
+            <div className="py-1">
+              {!session?.user ? (
                 <Link
-                  href="/profile"
+                  href="/login"
                   className="flex items-center px-4 py-2 text-sm gold-text hover:bg-[#2a241b] transition-colors"
                   onClick={() => setShowDropdown(false)}
                 >
                   <User className="mr-2" size={16} color="#d9a441" />
-                  Profile
+                  Login
                 </Link>
-                <Link
-                  href="/create-challenge"
-                  className="flex items-center px-4 py-2 text-sm gold-text hover:bg-[#2a241b] transition-colors"
-                  onClick={() => setShowDropdown(false)}
-                >
-                  <Pencil className="mr-2" size={16} color="#d9a441" />
-                  Create Challenge
-                </Link>
-                <button
-                  onClick={() => {
-                    handleSignOut();
-                    setShowDropdown(false);
-                  }}
-                  className="flex items-center w-full text-left px-4 py-2 text-sm gold-text hover:bg-[#2a241b] transition-colors"
-                >
-                  <LogOut className="mr-2" size={16} color="#d9a441" />
-                  Log Out
-                </button>
-              </div>
+              ) : (
+                <>
+                  <Link
+                    href="/profile"
+                    className="flex items-center px-4 py-2 text-sm gold-text hover:bg-[#2a241b] transition-colors"
+                    onClick={() => setShowDropdown(false)}
+                  >
+                    <User className="mr-2" size={16} color="#d9a441" />
+                    Profile
+                  </Link>
+                  <Link
+                    href="/create-challenge"
+                    className="flex items-center px-4 py-2 text-sm gold-text hover:bg-[#2a241b] transition-colors"
+                    onClick={() => setShowDropdown(false)}
+                  >
+                    <Pencil className="mr-2" size={16} color="#d9a441" />
+                    Create Challenge
+                  </Link>
+                  <button
+                    onClick={() => {
+                      handleSignOut();
+                      setShowDropdown(false);
+                    }}
+                    className="flex items-center w-full text-left px-4 py-2 text-sm gold-text hover:bg-[#2a241b] transition-colors"
+                  >
+                    <LogOut className="mr-2 cursor-pointer" size={16} color="#d9a441" />
+                    Log Out
+                  </button>
+                </>
+              )}
             </div>
-          )}
-        </div>
-      ) : (
-        <div></div>
-      )}
+          </div>
+        )}
+      </div>
       <Link href="/" className='bg-[#1f1a14] border border-[#a6916e] p-2 rounded-full'>
         <House color='#d9a441' />
       </Link>

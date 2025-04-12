@@ -1,13 +1,34 @@
 "use client"
 
 import SignInForm from '@components/SignInForm';
-import { signIn, useSession, getProviders, signOut } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const Login = () => {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnUrl = searchParams.get('returnUrl');
+  const [isGoogleRedirect, setIsGoogleRedirect] = useState(false);
+
+  // Check if we're in a Google redirect by looking for Google-specific parameters
+  useEffect(() => {
+    const hasGoogleParams = window.location.search.includes('callback=google');
+    if (hasGoogleParams) {
+      setIsGoogleRedirect(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (session?.user && (isGoogleRedirect || status === "authenticated")) {
+      const timer = setTimeout(() => {
+        router.push(returnUrl || '/profile');
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [session, status, router, returnUrl, isGoogleRedirect]);
 
   return (
     <section className='w-full h-screen flex items-center justify-center'>
@@ -15,15 +36,14 @@ const Login = () => {
         {session?.user ? (
           <div className="w-full h-screen bg-base flex items-center justify-center">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+            <p className="text-white ml-3">Redirecting...</p>
           </div>
         ) : (
           <div className="space-y-6">
-
             <SignInForm />
-
             <button
               type="button"
-              onClick={() => signIn('google')}
+              onClick={() => signIn('google', { callbackUrl: returnUrl || '/profile' })}
               className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-gray-900 primary-text-gradient cursor-pointer font-medium rounded-md hover:bg-gray-100 transition-colors mb-4"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">

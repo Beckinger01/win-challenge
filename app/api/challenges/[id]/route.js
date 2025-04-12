@@ -30,6 +30,67 @@ export async function GET(request, context) {
   }
 }
 
+export async function DELETE(request, context) {
+  const { id } = await context.params;
+
+  try {
+    await connectToDB();
+
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user) {
+      return NextResponse.json(
+        { message: 'Nicht autorisiert' },
+        { status: 401 }
+      );
+    }
+
+    const challenge = await Challenge.findById(id);
+
+    if (!challenge) {
+      return NextResponse.json(
+        { message: 'Challenge nicht gefunden' },
+        { status: 404 }
+      );
+    }
+
+    const user = await User.findOne({ email: session.user.email });
+
+    if (!user) {
+      return NextResponse.json(
+        { message: 'Benutzer nicht gefunden' },
+        { status: 404 }
+      );
+    }
+
+    const isCreator = user._id.toString() === challenge.creator.toString();
+
+    if (!isCreator) {
+      return NextResponse.json(
+        { message: 'Nur der Ersteller darf die Challenge löschen' },
+        { status: 403 }
+      );
+    }
+
+    await Challenge.findByIdAndDelete(id);
+
+    if (typeof global.io !== 'undefined') {
+      global.io.to(`challenge-${id}`).emit('challenge-deleted', { id });
+    }
+
+    return NextResponse.json(
+      { message: 'Challenge erfolgreich gelöscht' },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Error deleting challenge:', error);
+    return NextResponse.json(
+      { message: 'Fehler beim Löschen der Challenge' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PUT(request, context) {
   const { id } = await context.params;
 

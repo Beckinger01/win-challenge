@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 export default function SignInForm() {
@@ -13,6 +14,8 @@ export default function SignInForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const resetSuccess = searchParams.get('reset') === 'success';
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -53,6 +56,12 @@ export default function SignInForm() {
         </div>
       )}
 
+      {resetSuccess && (
+        <div className="mb-4 p-3 bg-green-900 bg-opacity-30 border border-green-700 rounded text-green-300 text-sm">
+          Dein Passwort wurde erfolgreich zurückgesetzt. Du kannst dich jetzt mit deinem neuen Passwort anmelden.
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="email" className="block text-sm font-medium gold-text mb-1">
@@ -87,20 +96,8 @@ export default function SignInForm() {
         </div>
 
         <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <input
-              id="remember-me"
-              name="remember-me"
-              type="checkbox"
-              className="h-4 w-4 bg-[#151515] border-[#a6916e] rounded"
-            />
-            <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-300">
-              Stay signed in
-            </label>
-          </div>
-
           <div className="text-sm">
-            <Link href="#" className="gold-text hover:text-[#f0d080] transition-colors">
+            <Link href="/forgot-password" className="gold-text hover:text-[#f0d080] transition-colors">
               Forgot Password?
             </Link>
           </div>
@@ -110,8 +107,8 @@ export default function SignInForm() {
           type="submit"
           disabled={isLoading}
           className={`w-full py-3 px-4 text-black font-medium rounded-md transition-colors ${isLoading
-              ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-              : 'gold-gradient-bg gold-pulse cursor-pointer'
+            ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+            : 'gold-gradient-bg gold-pulse cursor-pointer'
             }`}
         >
           {isLoading ? 'Logging in...' : 'Sign In'}
@@ -119,7 +116,7 @@ export default function SignInForm() {
 
         <div className="pt-4 text-center">
           <p className='text-sm text-gray-400'>
-          No account yet?{' '}
+            No account yet?{' '}
             <Link href="/signup" className="gold-text hover:text-[#f0d080] transition-colors">
               Register
             </Link>

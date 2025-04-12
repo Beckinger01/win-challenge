@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import { useSocket } from '@/hooks/useSocket';
 import { formatTime, getCurrentTimerValue } from '@/utils/timerUtils.client';
+import { User } from 'lucide-react';
 
 const ChallengePublicPage = ({ params }) => {
   const resolvedParams = use(params);
@@ -11,6 +12,7 @@ const ChallengePublicPage = ({ params }) => {
   const { socket, isConnected } = useSocket(id);
 
   const [challenge, setChallenge] = useState(null);
+  const [creatorInfo, setCreatorInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [challengeTime, setChallengeTime] = useState(0);
@@ -45,6 +47,20 @@ const ChallengePublicPage = ({ params }) => {
           setActiveGameIndex(nonCompletedIndex);
         } else if (data.games.length > 0) {
           setActiveGameIndex(0);
+        }
+
+        // Fetch creator information if creator ID exists
+        if (data.creator) {
+          try {
+            const creatorResponse = await fetch(`/api/user/${data.creator}`);
+            if (creatorResponse.ok) {
+              const creatorData = await creatorResponse.json();
+              setCreatorInfo(creatorData);
+            }
+          } catch (creatorError) {
+            console.error("Error fetching creator:", creatorError);
+            // Don't set the main error state, just log it
+          }
         }
 
         setLoading(false);
@@ -140,10 +156,20 @@ const ChallengePublicPage = ({ params }) => {
 
   const activeGame = challenge.games[activeGameIndex];
 
+  // Get creator display name
+  const creatorName = creatorInfo ? (creatorInfo.username || creatorInfo.name || creatorInfo.email) : null;
+
   return (
     <div className="container mx-auto p-4 max-w-7xl">
       <div className="mb-10 text-center">
         <h1 className="text-4xl md:text-5xl font-bold gold-shimmer-text mb-3">{challenge.name}</h1>
+        {/* Creator info display */}
+        {creatorName && (
+          <div className="flex items-center justify-center mb-2">
+            <User size={16} className="text-[#a6916e] mr-1" />
+            <span className="text-[#a6916e]">Created by {creatorName}</span>
+          </div>
+        )}
         <p className="text-gray-300">{challenge.type} Challenge</p>
       </div>
 
@@ -155,14 +181,14 @@ const ChallengePublicPage = ({ params }) => {
 
           <div className="flex items-center justify-center">
             <div className={`px-3 py-1 rounded-full ${challenge.forfeited
-                ? 'bg-red-900 text-red-300'
-                : challenge.completed
-                  ? 'bg-green-900 text-green-300'
-                  : challenge.paused
-                    ? 'bg-yellow-900 text-yellow-300'
-                    : challenge.timer.isRunning
-                      ? 'gold-gradient-bg text-black'
-                      : 'bg-gray-800 text-gray-300'
+              ? 'bg-red-900 text-red-300'
+              : challenge.completed
+                ? 'bg-green-900 text-green-300'
+                : challenge.paused
+                  ? 'bg-yellow-900 text-yellow-300'
+                  : challenge.timer.isRunning
+                    ? 'gold-gradient-bg text-black'
+                    : 'bg-gray-800 text-gray-300'
               }`}>
               {challenge.forfeited
                 ? 'Forfeited'
@@ -241,10 +267,10 @@ const ChallengePublicPage = ({ params }) => {
             <div
               key={index}
               className={`p-5 rounded-lg ${index === activeGameIndex && !challenge.forfeited
-                  ? 'gold-gradient-border gold-pulse'
-                  : game.completed
-                    ? 'border-2 border-green-600'
-                    : 'border border-[#333333]'
+                ? 'gold-gradient-border gold-pulse'
+                : game.completed
+                  ? 'border-2 border-green-600'
+                  : 'border border-[#333333]'
                 }`}
               style={{ backgroundColor: '#1a1a1a' }}
             >
@@ -285,16 +311,6 @@ const ChallengePublicPage = ({ params }) => {
               </div>
             </div>
           ))}
-        </div>
-      </div>
-
-      <div
-        className={`p-4 rounded-lg mb-4 ${isConnected ? 'gold-gradient-border' : 'border border-red-600'}`}
-        style={{ backgroundColor: '#1a1a1a' }}
-      >
-        <div className="flex items-center">
-          <div className={`w-3 h-3 rounded-full mr-2 ${isConnected ? 'bg-[#a6916e] gold-pulse' : 'bg-red-500'}`}></div>
-          <span className="text-sm text-gray-300">{isConnected ? 'Live connection active' : 'No live connection'}</span>
         </div>
       </div>
     </div>

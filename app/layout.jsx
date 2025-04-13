@@ -10,15 +10,15 @@ export const metadata = {
 
 const RootLayout = ({ children }) => {
   return (
-    <html lang="de">
+    <html lang="en">
       <body>
-        <GoogleAnalytics />
         <Provider>
           <main className='pt-16 font-int'>
             <Nav />
             {children}
           </main>
         </Provider>
+        <GoogleAnalytics />
       </body>
     </html>
   );

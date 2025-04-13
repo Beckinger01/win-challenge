@@ -99,6 +99,24 @@ const ChallengeSchema = new Schema({
   timer: {
     type: TimerSchema,
     default: () => ({})
+  },
+  // Neues Feld für den Pause-Timer
+  pauseTimer: {
+    type: {
+      startTime: {
+        type: Date,
+        default: null
+      },
+      duration: {
+        type: Number,
+        default: 0
+      },
+      isRunning: {
+        type: Boolean,
+        default: false
+      }
+    },
+    default: () => ({})
   }
 });
 

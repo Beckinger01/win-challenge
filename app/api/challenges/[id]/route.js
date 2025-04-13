@@ -172,8 +172,14 @@ export async function PUT(request, context) {
           challenge.timer.isRunning = true;
           challenge.paused = false;
 
-          if (challenge.pauseTimer) {
+          // Wichtig: Hier nur die pauseTimer.duration setzen, ohne zusätzliche Berechnung
+          if (challenge.pauseTimer && challenge.pauseTimer.isRunning) {
+            // Verwende den vom Client übergebenen Wert direkt
+            if (pauseTime !== undefined) {
+              challenge.pauseTimer.duration = pauseTime;
+            }
             challenge.pauseTimer.isRunning = false;
+            challenge.pauseTimer.startTime = null;
           }
         }
         break;
@@ -205,14 +211,27 @@ export async function PUT(request, context) {
           challenge.timer.isRunning = false;
           challenge.paused = true;
 
-          if (challenge.pauseTimer) {
+          // Pause-Timer initialisieren oder aktualisieren
+          if (!challenge.pauseTimer) {
+            challenge.pauseTimer = {
+              startTime: now,
+              duration: pauseTime || 0,
+              isRunning: true
+            };
+          } else {
+            challenge.pauseTimer.startTime = now;
             challenge.pauseTimer.isRunning = true;
+            // Wenn pauseTime explizit übergeben wurde, aktualisiere die duration
+            if (pauseTime !== undefined) {
+              challenge.pauseTimer.duration = pauseTime;
+            }
           }
+
+          // Auch alle laufenden Game-Timer pausieren
           challenge.games.forEach((game, idx) => {
             if (game.timer.isRunning) {
               game.timer.lastPauseTime = now;
               game.timer.isRunning = false;
-              console.log(`Paused game ${idx} due to challenge pause`);
             }
           });
         }

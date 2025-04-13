@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import { useSocket } from '@/hooks/useSocket';
 import { formatTime, getCurrentTimerValue } from '@/utils/timerUtils.client';
-import { User } from 'lucide-react';
+import { User, Clock, Pause } from 'lucide-react';
 
 const ChallengePublicPage = ({ params }) => {
   const resolvedParams = use(params);
@@ -18,6 +18,8 @@ const ChallengePublicPage = ({ params }) => {
   const [challengeTime, setChallengeTime] = useState(0);
   const [gameTimers, setGameTimers] = useState([]);
   const [activeGameIndex, setActiveGameIndex] = useState(null);
+  const [pauseTime, setPauseTime] = useState(0);
+  const [isPauseRunning, setIsPauseRunning] = useState(false);
 
   useEffect(() => {
     const fetchChallenge = async () => {
@@ -37,6 +39,22 @@ const ChallengePublicPage = ({ params }) => {
         })));
 
         setChallengeTime(getCurrentTimerValue(data.timer));
+
+        // Initialisiere Pause-Timer
+        if (data.pauseTimer) {
+          let pauseDuration = data.pauseTimer.duration || 0;
+
+          // Wenn der Pause-Timer läuft, berechne die zusätzliche Zeit seit dem Start
+          if (data.pauseTimer.isRunning && data.pauseTimer.startTime) {
+            const now = new Date();
+            const startTime = new Date(data.pauseTimer.startTime);
+            const additionalTime = now - startTime;
+            pauseDuration += additionalTime;
+          }
+
+          setPauseTime(pauseDuration);
+          setIsPauseRunning(data.pauseTimer.isRunning || false);
+        }
 
         const runningGameIndex = data.games.findIndex(game => game.timer.isRunning);
         const nonCompletedIndex = data.games.findIndex(game => !game.completed);
@@ -88,10 +106,15 @@ const ChallengePublicPage = ({ params }) => {
           return timer;
         })
       );
+
+      // Aktualisiere Pause-Timer, wenn er läuft
+      if (isPauseRunning) {
+        setPauseTime((prev) => prev + 1000);
+      }
     }, 1000);
 
     return () => clearInterval(timerInterval);
-  }, [challenge]);
+  }, [challenge, isPauseRunning]);
 
   useEffect(() => {
     if (!socket) return;
@@ -105,6 +128,12 @@ const ChallengePublicPage = ({ params }) => {
       })));
 
       setChallengeTime(getCurrentTimerValue(data.timer));
+
+      // Aktualisiere auch Pause-Timer-Daten
+      if (data.pauseTimer) {
+        setPauseTime(data.pauseTimer.duration || 0);
+        setIsPauseRunning(data.pauseTimer.isRunning || false);
+      }
 
       const runningGameIndex = data.games.findIndex(game => game.timer.isRunning);
       if (runningGameIndex >= 0 && runningGameIndex !== activeGameIndex) {
@@ -162,7 +191,7 @@ const ChallengePublicPage = ({ params }) => {
   return (
     <div className="container mx-auto p-4 max-w-7xl">
       <div className="mb-10 text-center">
-        <h1 className="text-4xl md:text-5xl font-bold gold-shimmer-text mb-3">{challenge.name}</h1>
+        <h1 className="text-4xl md:text-5xl font-bold gold-shimmer-text pb-4">{challenge.name}</h1>
         {/* Creator info display */}
         {creatorName && (
           <div className="flex items-center justify-center mb-2">
@@ -176,15 +205,27 @@ const ChallengePublicPage = ({ params }) => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
         {/* Challenge Timer */}
         <div className="gold-gradient-border rounded-lg p-6" style={{ backgroundColor: '#1a1a1a' }}>
-          <h2 className="text-xl font-semibold mb-4 gold-text">Challenge Timer</h2>
+          <h2 className="text-xl font-semibold mb-4 gold-text">
+            <Clock size={20} className="inline mr-2 text-[#a6916e]" />
+            Challenge Timer
+          </h2>
           <div className="text-5xl font-mono text-center mb-4 gold-shimmer-text">{formatTime(challengeTime)}</div>
+
+          {/* Pause Timer anzeigen */}
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center text-gray-300">
+              <Pause size={18} className="inline mr-1 text-[#a6916e]" />
+              <span>Pause Time:</span>
+            </div>
+            <div className="font-mono gold-text">{formatTime(pauseTime)}</div>
+          </div>
 
           <div className="flex items-center justify-center">
             <div className={`px-3 py-1 rounded-full ${challenge.forfeited
               ? 'bg-red-900 text-red-300'
               : challenge.completed
                 ? 'bg-green-900 text-green-300'
-                : challenge.paused
+                : isPauseRunning
                   ? 'bg-yellow-900 text-yellow-300'
                   : challenge.timer.isRunning
                     ? 'gold-gradient-bg text-black'
@@ -194,7 +235,7 @@ const ChallengePublicPage = ({ params }) => {
                 ? 'Forfeited'
                 : challenge.completed
                   ? 'Completed'
-                  : challenge.paused
+                  : isPauseRunning
                     ? 'Paused'
                     : challenge.timer.isRunning
                       ? 'Running'

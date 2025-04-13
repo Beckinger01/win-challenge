@@ -79,7 +79,6 @@ const ChallengeControlPage = ({ params }) => {
   useEffect(() => {
     const checkAuthAndFetchChallenge = async () => {
       try {
-
         const authResponse = await fetch(`/api/challenges/${id}/authorize`);
         const authData = await authResponse.json();
 
@@ -116,8 +115,19 @@ const ChallengeControlPage = ({ params }) => {
         if (activeIndex !== -1) {
           setActiveGameIndex(activeIndex);
         }
+
         if (data.pauseTimer) {
-          setPauseTime(data.pauseTimer.duration || 0);
+          let pauseDuration = data.pauseTimer.duration || 0;
+
+          // Wenn der Pause-Timer läuft, berechne die zusätzliche Zeit seit dem Start
+          if (data.pauseTimer.isRunning && data.pauseTimer.startTime) {
+            const now = new Date();
+            const startTime = new Date(data.pauseTimer.startTime);
+            const additionalTime = now - startTime;
+            pauseDuration += additionalTime;
+          }
+
+          setPauseTime(pauseDuration);
           setIsPauseRunning(data.pauseTimer.isRunning || false);
         }
 
@@ -158,9 +168,19 @@ const ChallengeControlPage = ({ params }) => {
         setPauseTime((prev) => prev + 1000);
       }
 
-      if (now - lastSaveTime >= 600000) {
-        saveCurrentState();
-        setLastSaveTime(now);
+      // Save state more frequently when pause timer is running
+      const timeSinceLastSave = now - lastSaveTime;
+      const shouldSaveNow =
+        (isPauseRunning && timeSinceLastSave >= 60000) || // Bei Pause jede Minute
+        (!isPauseRunning && timeSinceLastSave >= 300000);  // Sonst alle 5 Minuten
+
+      if (shouldSaveNow) {
+        try {
+          saveCurrentState();
+          setLastSaveTime(now);
+        } catch (error) {
+          console.error("Fehler beim automatischen Speichern:", error);
+        }
       }
     }, 1000);
 
@@ -228,6 +248,7 @@ const ChallengeControlPage = ({ params }) => {
       } else {
         setActiveGameIndex(null);
       }
+
       if (data.pauseTimer) {
         setPauseTime(data.pauseTimer.duration || 0);
         setIsPauseRunning(data.pauseTimer.isRunning || false);
@@ -242,32 +263,34 @@ const ChallengeControlPage = ({ params }) => {
   }, [socket]);
 
   const saveCurrentState = async () => {
-    if (!challenge) return;
+    if (!challenge || !navigator.onLine) return;
 
     try {
       const updatedChallenge = { ...challenge };
 
-      if (updatedChallenge.timer.isRunning) {
-        updatedChallenge.timer.duration = challengeTime;
-      }
+      // Bestehender Code zur Aktualisierung der Werte...
 
-      updatedChallenge.games = updatedChallenge.games.map((game, index) => {
-        if (game.timer.isRunning) {
-          return {
-            ...game,
-            timer: {
-              ...game.timer,
-              duration: gameTimers[index]?.value || 0
-            }
-          };
-        }
-        return game;
-      });
+      // Prüfe, ob pauseTimer existiert, bevor wir darauf zugreifen
       if (!updatedChallenge.pauseTimer) {
         updatedChallenge.pauseTimer = {};
       }
+
+      // Speichere Werte aus dem lokalen State
       updatedChallenge.pauseTimer.duration = pauseTime;
       updatedChallenge.pauseTimer.isRunning = isPauseRunning;
+
+      // Startzeit für den pauseTimer setzen, wenn er läuft
+      if (isPauseRunning && !updatedChallenge.pauseTimer.startTime) {
+        updatedChallenge.pauseTimer.startTime = new Date();
+      }
+
+      // Debug-Log hinzufügen
+      console.log("Sende Daten:", {
+        id,
+        challengeTime,
+        pauseTime,
+        isPauseRunning
+      });
 
       const response = await fetch(`/api/challenges/${id}/save-state`, {
         method: 'PUT',
@@ -278,7 +301,8 @@ const ChallengeControlPage = ({ params }) => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save challenge state');
+        const errorData = await response.json();
+        throw new Error(`Server-Fehler: ${errorData.message || response.statusText}`);
       }
 
       console.log('Challenge state saved successfully');
@@ -286,7 +310,7 @@ const ChallengeControlPage = ({ params }) => {
       const savedChallenge = await response.json();
       setChallenge(savedChallenge);
 
-      if (socket) {
+      if (socket && isConnected) {
         socket.emit('update-challenge', {
           challengeId: id,
           challengeData: savedChallenge
@@ -296,17 +320,19 @@ const ChallengeControlPage = ({ params }) => {
       setLastSaveTime(Date.now());
     } catch (err) {
       console.error('Error saving challenge state:', err);
+      // Speichere den Fehler, aber verhindere nicht das weitere Funktionieren der App
     }
   };
 
-  const updateChallenge = async (action, gameIndex = undefined) => {
+  const updateChallenge = async (action, gameIndex = undefined, explicitPauseTime = undefined) => {
     if (!isAuthorized) {
       setError('Du bist nicht berechtigt, diese Challenge zu steuern');
       return null;
     }
 
     try {
-      await saveCurrentState();
+      // Verwende explicitPauseTime, falls angegeben, sonst den State
+      const pauseTimeToSend = explicitPauseTime !== undefined ? explicitPauseTime : pauseTime;
 
       const response = await fetch(`/api/challenges/${id}`, {
         method: 'PUT',
@@ -318,7 +344,7 @@ const ChallengeControlPage = ({ params }) => {
           gameIndex,
           challengeTime: challengeTime,
           gameTimers: gameTimers.map(timer => timer.value),
-          pauseTime: pauseTime,
+          pauseTime: pauseTimeToSend,
           isPauseRunning: isPauseRunning
         }),
       });
@@ -353,14 +379,34 @@ const ChallengeControlPage = ({ params }) => {
     }
   };
 
-  const startChallengeTimer = () => {
+  const startChallengeTimer = async () => {
+    const currentPauseTime = pauseTime;
+
     setIsPauseRunning(false);
-    updateChallenge('start-challenge-timer');
+
+    const updatedChallenge = await updateChallenge('start-challenge-timer', undefined, currentPauseTime);
+
+    if (updatedChallenge && updatedChallenge.pauseTimer) {
+      setPauseTime(updatedChallenge.pauseTimer.duration || 0);
+    }
   };
 
-  const pauseChallengeTimer = () => {
+  const pauseChallengeTimer = async () => {
     setIsPauseRunning(true);
-    updateChallenge('pause-challenge-timer');
+
+    // Speichere den aktuellen Zustand vor dem API-Aufruf
+    await saveCurrentState();
+
+    // Dann Challenge aktualisieren
+    const updatedChallenge = await updateChallenge('pause-challenge-timer');
+
+    // Zusätzliche Speicherung, um sicherzugehen
+    if (updatedChallenge && socket) {
+      socket.emit('update-challenge', {
+        challengeId: id,
+        challengeData: updatedChallenge
+      });
+    }
   };
 
   const stopChallengeTimer = async () => {
@@ -583,10 +629,6 @@ const ChallengeControlPage = ({ params }) => {
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-3">
           <h1 className="text-xl sm:text-2xl font-bold gold-shimmer-text text-center sm:text-left">{challenge.name}</h1>
           <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-center">
-            <div className="flex items-center">
-              <div className={`w-2 h-2 rounded-full mr-1 ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-              <span className="text-xs sm:text-sm text-gray-400">{isConnected ? 'Verbunden' : 'Offline'}</span>
-            </div>
             <button
               onClick={toggleView}
               className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-white text-xs sm:text-sm rounded transition duration-300"

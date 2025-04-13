@@ -61,10 +61,10 @@ const Profile = () => {
           <div className="mb-8">
             <h2 className="text-white text-3xl font-semibold mb-6 border-b-2 border-[#a6916e] pb-2">Active Challenges</h2>
 
-            {challenges.some(challenge => !challenge.completed && (challenge.timer?.isRunning || challenge.games.some(game => game.timer?.isRunning))) ? (
+            {challenges.some(challenge => !challenge.completed && !challenge.forfeited) ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {challenges
-                  .filter(challenge => !challenge.completed && (challenge.timer?.isRunning || challenge.games.some(game => game.timer?.isRunning)))
+                  .filter(challenge => !challenge.completed && !challenge.forfeited)
                   .map((challenge) => (
                     <ProfileChallengeCard
                       key={challenge._id}
@@ -74,12 +74,12 @@ const Profile = () => {
                       startDate={challenge.createdAt}
                       type={challenge.type}
                       gameCount={challenge.games.length}
-                      isActive={true}
+                      isActive={!challenge.completed && !challenge.forfeited}
                     />
                   ))}
               </div>
             ) : (
-              <h1 className="text-white text-2xl mb-3 w-full text-center">Currently no active challenges</h1>
+              <p className="text-gray-400">No active challenges found.</p>
             )}
           </div>
           <div>

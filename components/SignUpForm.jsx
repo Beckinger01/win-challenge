@@ -37,7 +37,7 @@ export default function SignUpForm() {
       if (result.error) {
         setError(result.error);
       } else {
-        router.push('/erstelle-challenge');
+        router.push('/create-challenge');
       }
     } catch (err) {
       setError(err.message || 'Ein Fehler ist aufgetreten');
@@ -59,7 +59,7 @@ export default function SignUpForm() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="username" className="block text-sm font-medium gold-text mb-1">
-            Usernmae
+            Username
           </label>
           <input
             type="text"

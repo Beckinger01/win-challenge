@@ -4,6 +4,7 @@
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { signOut } from 'next-auth/react';
 
 export default function ResetPassword({ params }) {
     const { token } = use(params);
@@ -13,17 +14,18 @@ export default function ResetPassword({ params }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [message, setMessage] = useState('');
     const [tokenValid, setTokenValid] = useState(true); // Assume valid initially
+    const [success, setSuccess] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (password !== confirmPassword) {
-            setMessage('Die Passwörter stimmen nicht überein.');
+            setMessage('Passwords do not match.');
             return;
         }
 
         if (password.length < 8) {
-            setMessage('Das Passwort muss mindestens 8 Zeichen lang sein.');
+            setMessage('Password must be at least 8 characters long.');
             return;
         }
 
@@ -38,16 +40,23 @@ export default function ResetPassword({ params }) {
             });
 
             if (response.ok) {
-                router.push('/login?reset=success');
+                // Show success message and log out
+                setSuccess(true);
+
+                // Wait 3 seconds before logging out and redirecting
+                setTimeout(async () => {
+                    await signOut({ redirect: false });
+                    router.push('/login?reset=success');
+                }, 3000);
             } else {
                 const data = await response.json();
-                setMessage(data.message || 'Ein Fehler ist aufgetreten. Bitte versuche es später erneut.');
+                setMessage(data.message || 'An error occurred. Please try again later.');
                 if (data.message === 'Token is invalid or expired') {
                     setTokenValid(false);
                 }
             }
         } catch (error) {
-            setMessage('Ein Fehler ist aufgetreten. Bitte versuche es später erneut.');
+            setMessage('An error occurred. Please try again later.');
         } finally {
             setIsSubmitting(false);
         }
@@ -56,22 +65,28 @@ export default function ResetPassword({ params }) {
     return (
         <section className='w-full h-screen flex items-center justify-center'>
             <div className="max-w-md w-full px-6 py-8 bg-[#151515] rounded-lg gold-gradient-border shadow-lg">
-                <h1 className="text-2xl font-bold gold-shimmer-text mb-6 text-center">Neues Passwort festlegen</h1>
+                <h1 className="text-2xl font-bold gold-shimmer-text mb-6 text-center">Set New Password</h1>
 
-                {!tokenValid ? (
+                {success ? (
+                    <div className="space-y-6">
+                        <div className="bg-green-900 bg-opacity-20 border border-green-500 p-4 rounded text-green-300 text-center">
+                            Password has been reset successfully! You will be redirected to the login page.
+                        </div>
+                    </div>
+                ) : !tokenValid ? (
                     <div className="space-y-6">
                         <div className="bg-red-900 bg-opacity-20 border border-red-800 p-4 rounded text-red-300">
-                            Der Reset-Link ist ungültig oder abgelaufen. Bitte fordere einen neuen Link an.
+                            The reset link is invalid or has expired. Please request a new link.
                         </div>
                         <Link href="/forgot-password" className="block text-center gold-text hover:underline">
-                            Neuen Link anfordern
+                            Request New Link
                         </Link>
                     </div>
                 ) : (
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
                             <label htmlFor="password" className="block text-gray-300 mb-2">
-                                Neues Passwort
+                                New Password
                             </label>
                             <input
                                 id="password"
@@ -86,7 +101,7 @@ export default function ResetPassword({ params }) {
 
                         <div>
                             <label htmlFor="confirmPassword" className="block text-gray-300 mb-2">
-                                Passwort bestätigen
+                                Confirm Password
                             </label>
                             <input
                                 id="confirmPassword"
@@ -109,7 +124,7 @@ export default function ResetPassword({ params }) {
                             disabled={isSubmitting}
                             className="w-full gold-bg text-black font-semibold py-3 rounded-md"
                         >
-                            {isSubmitting ? 'Bitte warten...' : 'Passwort speichern'}
+                            {isSubmitting ? 'Please wait...' : 'Save Password'}
                         </button>
                     </form>
                 )}

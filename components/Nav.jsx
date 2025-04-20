@@ -34,6 +34,9 @@ function Nav() {
 
   return (
     <nav className="w-full p-4 flex justify-end items-center gap-4 fixed top-0 z-50">
+      <Link href="bug-report" className='bg-[#1f1a14] border border-[#a6916e] p-2 rounded-full'>
+        <span className='text-[#d9a441] text-lg'>Bugs?</span>
+      </Link>
       <div className="relative" ref={dropdownRef}>
         <button
           onClick={() => setShowDropdown(!showDropdown)}

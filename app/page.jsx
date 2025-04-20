@@ -424,9 +424,6 @@ const Home = () => {
               <Link href="/data-policy" className="text-gray-300 hover:text-white transition-colors">
                 Data Policy
               </Link>
-              <Link href="/refund" className="text-gray-300 hover:text-white transition-colors">
-                Refund Policy
-              </Link>
               <Link href="/impressum" className="text-gray-300 hover:text-white transition-colors">
                 Impressum
               </Link>

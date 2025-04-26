@@ -58,13 +58,8 @@ const RootLayout = ({ children }) => {
         <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png" />
         <link rel="manifest" href="/site.webmanifest" />
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1511082465942403"
-          crossorigin="anonymous"
-          strategy="afterInteractive"
-        />
-        {/* Strukturierte Daten für Google */}
+        <Script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1511082465942403"
+          crossorigin="anonymous"></Script>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

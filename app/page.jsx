@@ -176,7 +176,7 @@ const Home = () => {
                 <img
                   src="/images/Prev1.webp"
                   alt="Choose Your Challenge Type"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover  border-2 border-white"
                 />
               </motion.div>
               <div className="w-full md:w-2/3">
@@ -228,7 +228,7 @@ const Home = () => {
                 <img
                   src="https://placehold.co/800x500/a0a0a/d9a441?text=Comming+Soon"
                   alt="Live Streaming"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover  border-2 border-white"
                 />
               </motion.div>
               <div className="w-full md:w-2/3">
@@ -278,7 +278,7 @@ const Home = () => {
                 <img
                   src="/images/Prev2.webp"
                   alt="Customizable Timers"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover  border-2 border-white"
                 />
               </motion.div>
               <div className="w-full md:w-2/3">

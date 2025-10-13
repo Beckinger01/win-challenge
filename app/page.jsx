@@ -7,9 +7,6 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import CookieBanner from '@components/CookieBanner';
 
-import Prev1 from "../public/images/Prev1.webp"
-import Prev2 from "../public/images/Prev2.webp"
-
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
   visible: (custom) => ({
@@ -177,7 +174,7 @@ const Home = () => {
                 transition={{ duration: 0.3 }}
               >
                 <img
-                  src={Prev1}
+                  src="/images/Prev1.webp"
                   alt="Choose Your Challenge Type"
                   className="w-full h-full object-cover"
                 />
@@ -279,7 +276,7 @@ const Home = () => {
                 transition={{ duration: 0.3 }}
               >
                 <img
-                  src={Prev2}
+                  src="/images/Prev2.webp"
                   alt="Customizable Timers"
                   className="w-full h-full object-cover"
                 />

@@ -132,15 +132,10 @@ export async function PUT(request, context) {
       );
     }
 
-    // REMOVED: Pre-switch duration updates. These interfere with running timers (e.g., win increments).
-    // Instead, handle them INSIDE specific cases (e.g., stop actions) where client sync is needed.
-    // Always initialize pauseTimer if missing.
     if (!challenge.pauseTimer) {
       challenge.pauseTimer = {};
     }
 
-    // NEW: Helper function to calculate elapsed time server-side (avoids double-counting).
-    // Use this in stop/complete cases instead of adding to existing duration.
     const calculateElapsed = (timer) => {
       if (!timer.startTime || !timer.isRunning) return timer.duration || 0;
       const now = new Date();
@@ -166,7 +161,7 @@ export async function PUT(request, context) {
 
           if (challenge.pauseTimer && challenge.pauseTimer.isRunning) {
             if (pauseTime !== undefined) {
-              challenge.pauseTimer.duration = pauseTime;  // Only set if provided (finalizing pause).
+              challenge.pauseTimer.duration = pauseTime;
             }
             challenge.pauseTimer.isRunning = false;
             challenge.pauseTimer.startTime = null;
@@ -175,11 +170,8 @@ export async function PUT(request, context) {
         break;
 
       case 'stop-all-timers':
-        // FIXED: Use destructured vars instead of req.body.
-        // Trust client-provided times for stop (as original intent), but only if timer was running.
-        // Set duration directly (don't add to existing, to avoid double-count).
         challenge.timer.isRunning = false;
-        if (challenge.timer.isRunning || challengeTime !== undefined) {  // Only if stopping or provided.
+        if (challenge.timer.isRunning || challengeTime !== undefined) {
           challenge.timer.duration = challengeTime !== undefined ? challengeTime : calculateElapsed(challenge.timer);
         }
         challenge.completed = true;
@@ -188,11 +180,10 @@ export async function PUT(request, context) {
           challenge.games.forEach((game, index) => {
             game.timer.isRunning = false;
             if (gameTimers[index] !== undefined) {
-              game.timer.duration = gameTimers[index];  // Trust client for stop.
+              game.timer.duration = gameTimers[index];
             } else if (game.timer.isRunning) {
-              game.timer.duration = calculateElapsed(game.timer);  // Fallback to server calc.
+              game.timer.duration = calculateElapsed(game.timer);
             }
-            // Clear running state.
             game.timer.startTime = null;
             game.timer.pausedTime = 0;
             game.timer.lastPauseTime = null;
@@ -214,18 +205,18 @@ export async function PUT(request, context) {
           challenge.timer.isRunning = false;
           challenge.paused = true;
 
-          if (!challenge.pauseTimer.startTime) {  // Avoid overwriting if already set.
+          if (!challenge.pauseTimer.startTime) {
             challenge.pauseTimer.startTime = now;
           }
           challenge.pauseTimer.isRunning = true;
           if (pauseTime !== undefined) {
-            challenge.pauseTimer.duration = pauseTime;  // Only if provided.
+            challenge.pauseTimer.duration = pauseTime;
           }
 
-          // Pause all game timers (no duration set here—let them resume later).
+          // Pause all game timers
           challenge.games.forEach((game) => {
             if (game.timer.isRunning) {
-              game.timer.lastPauseTime = now;
+              game.timer.lastPauseTime = now;  // Set for later resume
               game.timer.isRunning = false;
             }
           });
@@ -236,11 +227,11 @@ export async function PUT(request, context) {
         if (challenge.timer.startTime) {
           const endTime = new Date();
           challenge.timer.endTime = endTime;
-          challenge.timer.duration = calculateElapsed(challenge.timer);  // Server calc, no add.
+          challenge.timer.duration = calculateElapsed(challenge.timer);
           challenge.timer.isRunning = false;
           challenge.completed = true;
           challenge.completedAt = endTime;
-          challenge.timer.startTime = null;  // Clear.
+          challenge.timer.startTime = null;
           challenge.timer.pausedTime = 0;
           challenge.timer.lastPauseTime = null;
 
@@ -250,12 +241,12 @@ export async function PUT(request, context) {
         }
         break;
 
-      case 'forfied-challenge':  // Typo fix: 'forfeited'?
+      case 'forfeited-challenge':  // Fixed typo from 'forfied'
         challenge.forfeited = true;
         if (challenge.timer.startTime) {
           const endTime = new Date();
           challenge.timer.endTime = endTime;
-          challenge.timer.duration = calculateElapsed(challenge.timer);  // Server calc.
+          challenge.timer.duration = calculateElapsed(challenge.timer);
           challenge.timer.isRunning = false;
           challenge.completed = true;
           challenge.completedAt = endTime;
@@ -263,7 +254,6 @@ export async function PUT(request, context) {
           challenge.timer.pausedTime = 0;
           challenge.timer.lastPauseTime = null;
 
-          // Stop all game timers with server calc (consistent with above).
           challenge.games.forEach((game) => {
             if (game.timer.isRunning) {
               game.timer.isRunning = false;
@@ -285,11 +275,11 @@ export async function PUT(request, context) {
 
       case 'start-game-timer':
         if (gameIndex !== undefined) {
-          // Stop other running game timers (use server calc for their duration).
+          // FIXED: Stop other running game timers (unchanged)
           for (let i = 0; i < challenge.games.length; i++) {
             if (i !== gameIndex && challenge.games[i].timer.isRunning) {
               const otherGame = challenge.games[i];
-              otherGame.timer.duration = calculateElapsed(otherGame.timer);  // Set final duration.
+              otherGame.timer.duration = calculateElapsed(otherGame.timer);
               otherGame.timer.isRunning = false;
               otherGame.timer.startTime = null;
               otherGame.timer.pausedTime = 0;
@@ -297,13 +287,29 @@ export async function PUT(request, context) {
             }
           }
 
-          // Start new game timer (no duration set—it's running).
+          // FIXED: Handle both NEW START and RESUME
           const game = challenge.games[gameIndex];
           if (game && !game.completed) {
             const now = new Date();
-            game.timer.startTime = now;
-            game.timer.pausedTime = 0;
-            game.timer.lastPauseTime = null;
+
+            // If paused, resume by adding pause duration to pausedTime (preserve startTime)
+            if (game.timer.lastPauseTime) {
+              const pauseDuration = now - game.timer.lastPauseTime;
+              game.timer.pausedTime += pauseDuration;
+              game.timer.lastPauseTime = null;
+            }
+
+            // Only set startTime if this is a brand-new timer (no prior start)
+            if (!game.timer.startTime) {
+              game.timer.startTime = now;
+              game.timer.pausedTime = 0;  // Ensure 0 for new starts
+            }
+
+            // Reset lastPauseTime if somehow set (but shouldn't be for new/running)
+            if (game.timer.lastPauseTime) {
+              game.timer.lastPauseTime = null;
+            }
+
             game.timer.isRunning = true;
           }
         }
@@ -313,9 +319,8 @@ export async function PUT(request, context) {
         if (gameIndex !== undefined) {
           const game = challenge.games[gameIndex];
           if (game && game.timer.isRunning) {
-            game.timer.lastPauseTime = new Date();
+            game.timer.lastPauseTime = new Date();  // Ensure set for resume
             game.timer.isRunning = false;
-            // No duration set here.
           }
         }
         break;
@@ -324,7 +329,7 @@ export async function PUT(request, context) {
         if (gameIndex !== undefined) {
           const game = challenge.games[gameIndex];
           if (game && game.timer.startTime) {
-            game.timer.duration = calculateElapsed(game.timer);  // Server calc.
+            game.timer.duration = calculateElapsed(game.timer);
             game.timer.endTime = new Date();
             game.timer.isRunning = false;
             game.timer.startTime = null;
@@ -343,7 +348,7 @@ export async function PUT(request, context) {
             if (game.currentWins >= game.winCount) {
               game.completed = true;
 
-              // FIXED: Use server calc for duration (no pre-set interference, no adding to existing).
+              // Unchanged: Now uses correct accumulated startTime/pausedTime
               if (game.timer.isRunning && game.timer.startTime) {
                 game.timer.duration = calculateElapsed(game.timer);
                 game.timer.endTime = new Date();
@@ -354,7 +359,6 @@ export async function PUT(request, context) {
               }
             }
 
-            // Check if all games completed.
             const allCompleted = challenge.games.every(g => g.completed);
             if (allCompleted) {
               challenge.completed = true;
@@ -369,7 +373,6 @@ export async function PUT(request, context) {
                 challenge.timer.lastPauseTime = null;
               }
             }
-            // NO duration set here unless completing—fixes the jump on increment.
           }
         }
         break;

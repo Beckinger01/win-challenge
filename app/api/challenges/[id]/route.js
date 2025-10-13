@@ -348,25 +348,35 @@ export async function PUT(request, context) {
           if (game) {
             game.currentWins += 1;
 
-            // Nur wenn das Spiel jetzt abgeschlossen ist, stoppe den Timer
+            // Check if game is now complete
             if (game.currentWins >= game.winCount) {
               game.completed = true;
+
+              // Stop the timer if it's running
+              if (game.timer.isRunning && game.timer.startTime) {
+                const endTime = new Date();
+                const elapsed = endTime - new Date(game.timer.startTime) - (game.timer.pausedTime || 0);
+                game.timer.duration = (game.timer.duration || 0) + Math.max(0, elapsed);
+                game.timer.endTime = endTime;
+                game.timer.isRunning = false;
+                game.timer.startTime = null;
+                game.timer.pausedTime = 0;
+              }
             }
 
-            // Prüfe ob alle Spiele abgeschlossen sind
+            // Check if all games are completed
             const allCompleted = challenge.games.every(g => g.completed);
             if (allCompleted) {
               challenge.completed = true;
               challenge.completedAt = new Date();
 
-              if (challenge.timer.isRunning) {
+              // Stop challenge timer if running
+              if (challenge.timer.isRunning && challenge.timer.startTime) {
                 const endTime = new Date();
                 const runningTime = endTime - challenge.timer.startTime;
                 challenge.timer.endTime = endTime;
                 challenge.timer.duration = runningTime - challenge.timer.pausedTime;
                 challenge.timer.isRunning = false;
-
-                console.log("Alle Spiele abgeschlossen - Challenge-Timer automatisch gestoppt");
               }
             }
           }

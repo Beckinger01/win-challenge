@@ -16,19 +16,27 @@ export const formatTime = (milliseconds) => {
 export const getCurrentTimerValue = (timer) => {
   if (!timer) return 0;
 
-  // Basis-Duration (bereits gespeicherte Zeit)
-  let totalTime = timer.duration || 0;
+  // FIXED: For running or paused timers, ALWAYS calculate from startTime/pausedTime/lastPauseTime.
+  // ONLY use duration if finalized (isRunning=false AND endTime set OR completed).
+  // This avoids double-counting if duration was set mid-run (from save-state).
+  let totalTime = 0;
 
-  // Wenn der Timer läuft, addiere die aktuelle Session-Zeit
   if (timer.isRunning && timer.startTime) {
+    // Running: Full elapsed = (now - start) - total paused.
     const now = new Date();
-    const currentSessionTime = now - new Date(timer.startTime) - (timer.pausedTime || 0);
-    totalTime += Math.max(0, currentSessionTime);
-  }
-  // Wenn der Timer pausiert ist, addiere die Zeit bis zur Pause
-  else if (!timer.isRunning && timer.startTime && timer.lastPauseTime && !timer.endTime) {
-    const pausedSessionTime = new Date(timer.lastPauseTime) - new Date(timer.startTime) - (timer.pausedTime || 0);
-    totalTime += Math.max(0, pausedSessionTime);
+    const runningTime = now - new Date(timer.startTime);
+    totalTime = Math.max(0, runningTime - (timer.pausedTime || 0));
+  } else if (!timer.isRunning && timer.startTime && timer.lastPauseTime && !timer.endTime) {
+    // Paused: Elapsed up to lastPauseTime = (lastPause - start) - total paused (before this pause).
+    const pausedAt = new Date(timer.lastPauseTime);
+    const runningTime = pausedAt - new Date(timer.startTime);
+    totalTime = Math.max(0, runningTime - (timer.pausedTime || 0));
+  } else if (!timer.isRunning && timer.endTime) {
+    // Finalized/Stopped: Use duration (server-set final value).
+    totalTime = timer.duration || 0;
+  } else {
+    // Not started or other: Use duration as base (e.g., from prior stops).
+    totalTime = timer.duration || 0;
   }
 
   return Math.max(0, totalTime);

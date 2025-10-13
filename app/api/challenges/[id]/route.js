@@ -91,62 +91,62 @@ export async function DELETE(request, context) {
   }
 }
 
+const calculateElapsed = (timer) => {
+  if (!timer.startTime || !timer.isRunning) return timer.duration || 0;
+  const now = new Date();
+  const runningTime = now - new Date(timer.startTime);
+  return Math.max(0, runningTime - (timer.pausedTime || 0));
+};
+
 export async function PUT(request, context) {
   const { id } = await context.params;
-
   try {
     await connectToDB();
-
     const session = await getServerSession(authOptions);
-
     if (!session?.user) {
       return NextResponse.json({ message: 'Nicht autorisiert' }, { status: 401 });
     }
-
-    const { action, gameIndex, challengeTime, gameTimers, pauseTime, isPauseRunning, forfeited } = await request.json();
-
+    const body = await request.json();
+    const { action, gameIndex, challengeTime, gameTimers, pauseTime, isPauseRunning, forfeited } = body;
     let challenge = await Challenge.findById(id);
-
     if (!challenge) {
-      return NextResponse.json(
-        { message: 'Challenge nicht gefunden' },
-        { status: 404 }
-      );
+      return NextResponse.json({ message: 'Challenge nicht gefunden' }, { status: 404 });
     }
-
     const user = await User.findOne({ email: session.user.email });
-
     if (!user) {
-      return NextResponse.json(
-        { message: 'Benutzer nicht gefunden' },
-        { status: 404 }
-      );
+      return NextResponse.json({ message: 'Benutzer nicht gefunden' }, { status: 404 });
     }
-
     const isCreator = user._id.toString() === challenge.creator.toString();
-
     if (!isCreator) {
-      return NextResponse.json(
-        { message: 'Nur der Ersteller darf die Challenge aktualisieren' },
-        { status: 403 }
-      );
+      return NextResponse.json({ message: 'Nur der Ersteller darf die Challenge aktualisieren' }, { status: 403 });
     }
-
     if (!challenge.pauseTimer) {
       challenge.pauseTimer = {};
     }
-
-    const calculateElapsed = (timer) => {
-      if (!timer.startTime || !timer.isRunning) return timer.duration || 0;
-      const now = new Date();
-      const runningTime = now - new Date(timer.startTime);
-      return Math.max(0, runningTime - (timer.pausedTime || 0));
-    };
+    // FIXED: Only handle client-provided times in STOP/COMPLETE actions. Ignore for start/pause/increment to avoid mid-run sets.
+    const isStopAction = ['stop-all-timers', 'stop-challenge-timer', 'stop-game-timer', 'forfeited-challenge'].includes(action);
+    if (isStopAction && challengeTime !== undefined) {
+      // Trust client for challenge stop (as original), but only set if stopping.
+      if (!challenge.timer.isRunning) challenge.timer.duration = challengeTime;
+    }
+    if (isStopAction && gameTimers && Array.isArray(gameTimers) && challenge.games) {
+      challenge.games.forEach((game, index) => {
+        if (gameTimers[index] !== undefined && !game.timer.isRunning) {
+          game.timer.duration = gameTimers[index];  // Only for stopped games.
+        }
+      });
+    }
+    if (pauseTime !== undefined) {
+      challenge.pauseTimer.duration = pauseTime;
+    }
+    if (isPauseRunning !== undefined) {
+      challenge.pauseTimer.isRunning = isPauseRunning;
+    }
 
     switch (action) {
       case 'start-challenge-timer':
+        // ... (unchanged from previous fix)
         const now = new Date();
-
         if (!challenge.timer.isRunning) {
           if (!challenge.timer.startTime) {
             challenge.timer.startTime = now;
@@ -155,14 +155,9 @@ export async function PUT(request, context) {
             challenge.timer.pausedTime += pauseDuration;
             challenge.timer.lastPauseTime = null;
           }
-
           challenge.timer.isRunning = true;
           challenge.paused = false;
-
           if (challenge.pauseTimer && challenge.pauseTimer.isRunning) {
-            if (pauseTime !== undefined) {
-              challenge.pauseTimer.duration = pauseTime;
-            }
             challenge.pauseTimer.isRunning = false;
             challenge.pauseTimer.startTime = null;
           }
@@ -344,28 +339,35 @@ export async function PUT(request, context) {
           const game = challenge.games[gameIndex];
           if (game) {
             game.currentWins += 1;
-
+            // LOG FOR DIAGNOSIS
+            console.log(`Win increment for game ${gameIndex}: currentWins=${game.currentWins}/${game.winCount}, pre-completion state:`, {
+              startTime: game.timer.startTime?.toISOString(),
+              pausedTime: game.timer.pausedTime,
+              isRunning: game.timer.isRunning,
+              durationBefore: game.timer.duration,
+              calculatedElapsedBefore: calculateElapsed(game.timer) / 1000 + 's'
+            });
             if (game.currentWins >= game.winCount) {
               game.completed = true;
-
-              // Unchanged: Now uses correct accumulated startTime/pausedTime
               if (game.timer.isRunning && game.timer.startTime) {
-                game.timer.duration = calculateElapsed(game.timer);
+                const elapsed = calculateElapsed(game.timer);
+                game.timer.duration = elapsed;  // Server calc - full time
                 game.timer.endTime = new Date();
                 game.timer.isRunning = false;
                 game.timer.startTime = null;
                 game.timer.pausedTime = 0;
                 game.timer.lastPauseTime = null;
+                // LOG
+                console.log(`Game ${gameIndex} completed: final duration=${elapsed / 1000}s`);
               }
             }
-
             const allCompleted = challenge.games.every(g => g.completed);
             if (allCompleted) {
               challenge.completed = true;
               challenge.completedAt = new Date();
-
               if (challenge.timer.isRunning && challenge.timer.startTime) {
-                challenge.timer.duration = calculateElapsed(challenge.timer);
+                const challengeElapsed = calculateElapsed(challenge.timer);
+                challenge.timer.duration = challengeElapsed;
                 challenge.timer.endTime = new Date();
                 challenge.timer.isRunning = false;
                 challenge.timer.startTime = null;
@@ -375,7 +377,7 @@ export async function PUT(request, context) {
             }
           }
         }
-        break;
+        break
 
       default:
         return NextResponse.json(
@@ -388,13 +390,9 @@ export async function PUT(request, context) {
     if (typeof global.io !== 'undefined') {
       global.io.to(`challenge-${id}`).emit('challenge-updated', challenge);
     }
-
     return NextResponse.json(challenge);
   } catch (error) {
     console.error('Error updating challenge:', error);
-    return NextResponse.json(
-      { message: 'Error updating challenge' },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Error updating challenge' }, { status: 500 });
   }
 }

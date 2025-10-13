@@ -286,24 +286,17 @@ export async function PUT(request, context) {
 
       case 'start-game-timer':
         if (gameIndex !== undefined) {
-          // Stoppe alle anderen laufenden Game-Timer
+          // Stop other running game timers
           for (let i = 0; i < challenge.games.length; i++) {
             if (i !== gameIndex && challenge.games[i].timer.isRunning) {
               const otherGame = challenge.games[i];
               const now = new Date();
 
               if (otherGame.timer.startTime) {
-                // Berechne die Zeit seit dem letzten Start
                 const startTime = new Date(otherGame.timer.startTime);
-                const currentSessionTime = now - startTime - (otherGame.timer.pausedTime || 0);
-
-                // Addiere nur die positive Zeit zur Duration
-                otherGame.timer.duration = (otherGame.timer.duration || 0) + Math.max(0, currentSessionTime);
-
-                console.log(`Stopped timer for game ${i}, session time: ${currentSessionTime}ms, total duration: ${otherGame.timer.duration}ms`);
+                const elapsed = now - startTime - (otherGame.timer.pausedTime || 0);
+                otherGame.timer.duration = (otherGame.timer.duration || 0) + Math.max(0, elapsed);
               }
-
-              // Setze den Timer komplett zurück
               otherGame.timer.isRunning = false;
               otherGame.timer.startTime = null;
               otherGame.timer.pausedTime = 0;
@@ -311,18 +304,16 @@ export async function PUT(request, context) {
             }
           }
 
-          // Starte den neuen Game-Timer
+          // Start new game timer
           const game = challenge.games[gameIndex];
           if (game && !game.completed) {
             const now = new Date();
 
-            // Wichtig: Setze alle Timer-Eigenschaften zurück für einen sauberen Start
+            // Reset timer properties
             game.timer.startTime = now;
             game.timer.pausedTime = 0;
             game.timer.lastPauseTime = null;
             game.timer.isRunning = true;
-
-            console.log(`Started timer for game ${gameIndex}, previous duration: ${game.timer.duration || 0}ms`);
           }
         }
         break;
@@ -341,12 +332,10 @@ export async function PUT(request, context) {
           const game = challenge.games[gameIndex];
           if (game && game.timer.startTime && game.timer.isRunning) {
             const endTime = new Date();
-            const currentSessionTime = endTime - new Date(game.timer.startTime) - (game.timer.pausedTime || 0);
-
-            game.timer.duration = (game.timer.duration || 0) + Math.max(0, currentSessionTime);
+            const elapsed = endTime - new Date(game.timer.startTime) - (game.timer.pausedTime || 0);
+            game.timer.duration = (game.timer.duration || 0) + Math.max(0, elapsed);
             game.timer.endTime = endTime;
             game.timer.isRunning = false;
-
             game.timer.startTime = null;
             game.timer.pausedTime = 0;
           }

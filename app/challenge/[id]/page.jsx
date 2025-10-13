@@ -706,7 +706,7 @@ const ChallengeControlPage = ({ params }) => {
 
             {/* Loading overlay */}
             {isSwitchingGame && (
-              <div className="absolute inset-0 bg-[#151515] bg-opacity-90 flex items-center justify-center z-10 rounded-lg">
+              <div className="absolute inset-0 bg-[#151515] bg-opacity-90 flex items-center justify-center z-99 rounded-lg">
                 <div className="text-center">
                   <div className="gold-shimmer-text text-xl sm:text-2xl font-semibold mb-2">Changing Game</div>
                   <div className="flex justify-center">

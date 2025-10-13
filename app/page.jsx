@@ -32,13 +32,13 @@ const staggerContainer = {
 };
 
 const Home = () => {
-  const { data: session} = useSession();
+  const { data: session } = useSession();
   const router = useRouter();
 
   const handleCreateChallenge = () => {
     if (session?.user) {
       router.push('/create-challenge');
-    }else {
+    } else {
       router.push('/login');
     }
   };
@@ -121,10 +121,10 @@ const Home = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.98 }}
           >
-            {session?.user ? ( 
-            <button onClick={handleCreateChallenge} className="gold-gradient-bg px-8 py-4 rounded-md text-black font-bold text-lg shadow-lg inline-block">
-              Create Challenge
-            </button>
+            {session?.user ? (
+              <button onClick={handleCreateChallenge} className="gold-gradient-bg px-8 py-4 rounded-md text-black font-bold text-lg shadow-lg inline-block">
+                Create Challenge
+              </button>
             ) : (
               <button onClick={handleCreateChallenge} className="gold-gradient-bg px-8 py-4 rounded-md text-black font-bold text-lg shadow-lg inline-block">
                 Sign In
@@ -307,7 +307,7 @@ const Home = () => {
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: 0.4, ease: "easeOut" }}
                 >
-                   Watch your the challenge of your favorite streamer or frined live and at realtime. See all standings and timers of challenge and Games.
+                  Watch your the challenge of your favorite streamer or frined live and at realtime. See all standings and timers of challenge and Games.
                 </motion.p>
               </div>
             </motion.div>

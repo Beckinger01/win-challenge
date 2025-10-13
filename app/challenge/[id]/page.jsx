@@ -5,7 +5,7 @@ import { useSocket } from '@/hooks/useSocket';
 import { formatTime, getCurrentTimerValue } from '@/utils/timerUtils.client';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import NoScrollView from '@/components/NoScrollView'; // Import the NoScrollView component
+import NoScrollView from '@/components/NoScrollView';
 
 const ChallengeControlPage = ({ params }) => {
   const { data: session, status } = useSession();
@@ -32,25 +32,23 @@ const ChallengeControlPage = ({ params }) => {
     creatorId: null,
     userEmail: null
   });
-  // State for view toggle
+
   const [isNoScrollView, setIsNoScrollView] = useState(false);
 
-  // Handle toggling the navbar visibility when changing views
+
   useEffect(() => {
     if (isNoScrollView) {
-      // Find the Nav component and hide it
       const navElement = document.querySelector('nav');
       if (navElement) {
         navElement.style.display = 'none';
       }
 
-      // Remove padding-top from main element
+
       const mainElement = document.querySelector('main');
       if (mainElement) {
         mainElement.style.paddingTop = '0';
       }
     } else {
-      // Restore the Nav component and main padding
       const navElement = document.querySelector('nav');
       if (navElement) {
         navElement.style.display = '';
@@ -62,7 +60,6 @@ const ChallengeControlPage = ({ params }) => {
       }
     }
 
-    // Cleanup function for when component unmounts
     return () => {
       const navElement = document.querySelector('nav');
       if (navElement) {
@@ -119,7 +116,6 @@ const ChallengeControlPage = ({ params }) => {
         if (data.pauseTimer) {
           let pauseDuration = data.pauseTimer.duration || 0;
 
-          // Wenn der Pause-Timer läuft, berechne die zusätzliche Zeit seit dem Start
           if (data.pauseTimer.isRunning && data.pauseTimer.startTime) {
             const now = new Date();
             const startTime = new Date(data.pauseTimer.startTime);
@@ -151,17 +147,17 @@ const ChallengeControlPage = ({ params }) => {
 
     const timerInterval = setInterval(() => {
       const now = Date.now();
-      if (challenge.timer.isRunning && !challenge.completed) {  // FIXED: Stop ticks if completed.
+      if (challenge.timer.isRunning && !challenge.completed) {
         setChallengeTime((prev) => prev + 1000);
       }
 
       setGameTimers((prevTimers) =>
         prevTimers.map((timer, index) => {
           const game = challenge.games[index];
-          if (timer.isRunning && !game?.completed && !challenge.completed) {  // FIXED: Also check challenge completed.
+          if (timer.isRunning && !game?.completed && !challenge.completed) {
             return { ...timer, value: timer.value + 1000 };
           }
-          return timer;  // Paused/inactive: Keep current value (from getCurrentTimerValue on updates).
+          return timer;
         })
       );
 
@@ -169,10 +165,9 @@ const ChallengeControlPage = ({ params }) => {
         setPauseTime((prev) => prev + 1000);
       }
 
-      // FIXED: Reduce auto-save frequency—only if paused or idle (avoids mid-run saves).
       const timeSinceLastSave = now - lastSaveTime;
-      const shouldSaveNow = challenge.paused || (!challenge.timer.isRunning && timeSinceLastSave >= 300000);  // Every 5min if not running; or on pause.
-      if (shouldSaveNow && timeSinceLastSave >= 60000) {  // At least 1min apart.
+      const shouldSaveNow = challenge.paused || (!challenge.timer.isRunning && timeSinceLastSave >= 300000);
+      if (shouldSaveNow && timeSinceLastSave >= 60000) {
         try {
           saveCurrentState();
           setLastSaveTime(now);
@@ -183,7 +178,7 @@ const ChallengeControlPage = ({ params }) => {
     }, 1000);
 
     return () => clearInterval(timerInterval);
-  }, [challenge, isPauseRunning, lastSaveTime]);  // Dependencies ok.
+  }, [challenge, isPauseRunning, lastSaveTime]);
 
 
   useEffect(() => {
@@ -233,7 +228,6 @@ const ChallengeControlPage = ({ params }) => {
 
     const handleChallengeUpdated = (data) => {
       setChallenge(data);
-      // FIXED: Recalc from server state (accurate now).
       setGameTimers(data.games.map((game) => ({
         value: getCurrentTimerValue(game.timer),
         isRunning: game.timer.isRunning
@@ -266,8 +260,7 @@ const ChallengeControlPage = ({ params }) => {
     try {
       const updatedChallenge = { ...challenge };
 
-      // FIXED: DO NOT set timer durations here—let server calc.
-      // Only sync safe fields: pauseTimer, completed, wins (from state).
+
       if (!updatedChallenge.pauseTimer) {
         updatedChallenge.pauseTimer = {};
       }
@@ -277,18 +270,14 @@ const ChallengeControlPage = ({ params }) => {
         updatedChallenge.pauseTimer.startTime = new Date();
       }
 
-      // Sync wins/completed from local (if changed, e.g., via increments—but increments use main PUT).
-      // Assuming wins are updated via socket/main PUT, this is mostly for pause.
       updatedChallenge.completed = challenge.completed;
       updatedChallenge.paused = challenge.paused;
       updatedChallenge.games = challenge.games.map((game, idx) => ({
         ...game,
-        currentWins: game.currentWins,  // Already synced via PUT.
+        currentWins: game.currentWins,
         completed: game.completed
       }));
 
-      // NO: updatedChallenge.timer.duration = challengeTime;  // Remove if present!
-      // NO: updatedChallenge.games.forEach(g => g.timer.duration = gameTimers[idx].value);
 
       console.log("Sende save-state (safe fields only):", {
         id,
@@ -336,8 +325,6 @@ const ChallengeControlPage = ({ params }) => {
     try {
       const pauseTimeToSend = explicitPauseTime !== undefined ? explicitPauseTime : pauseTime;
 
-      // FIXED: Only send challengeTime/gameTimers for STOP actions (e.g., 'stop-challenge-timer', 'stop-game-timer').
-      // For start/pause/increment, let server calc—avoids mid-run sets.
       const isStopAction = ['stop-all-timers', 'stop-challenge-timer', 'stop-game-timer', 'forfeited-challenge'].includes(action);
       const bodyData = {
         action,
@@ -363,7 +350,6 @@ const ChallengeControlPage = ({ params }) => {
       const updatedChallenge = await response.json();
       setChallenge(updatedChallenge);
 
-      // FIXED: On socket/update, recalculate gameTimers from server state (now accurate, no jump).
       setGameTimers(updatedChallenge.games.map((game, idx) => ({
         value: getCurrentTimerValue(game.timer),
         isRunning: game.timer.isRunning
@@ -403,10 +389,8 @@ const ChallengeControlPage = ({ params }) => {
   const pauseChallengeTimer = async () => {
     setIsPauseRunning(true);
 
-    // Dann Challenge aktualisieren
     const updatedChallenge = await updateChallenge('pause-challenge-timer');
 
-    // Zusätzliche Speicherung, um sicherzugehen
     if (updatedChallenge && socket) {
       socket.emit('update-challenge', {
         challengeId: id,
@@ -459,17 +443,14 @@ const ChallengeControlPage = ({ params }) => {
       setIsSwitchingGame(true);
       setPendingGameIndex(index);
 
-      // FIXED: Ensure challenge is running.
       if (!challenge.timer.isRunning) {
         await updateChallenge('start-challenge-timer');
       }
 
-      // FIXED: Pause (don't stop) the old active game—preserves startTime for later resume.
       if (activeGameIndex !== null) {
-        await updateChallenge('pause-game-timer', activeGameIndex);  // Changed from 'stop-game-timer'
+        await updateChallenge('pause-game-timer', activeGameIndex);
       }
 
-      // Start/resume the new game (server will resume if previously paused).
       const result = await updateChallenge('start-game-timer', index);
 
       if (!result) {
@@ -744,13 +725,14 @@ const ChallengeControlPage = ({ params }) => {
                   key={index}
                   onClick={() => !isSwitchingGame && !challenge.paused && !challenge.completed && challenge.timer.isRunning && switchToGame(index)}
                   className={`relative overflow-hidden rounded-lg transition-all duration-500
-                    ${(isSwitchingGame || challenge.paused || challenge.completed || !challenge.timer.isRunning) ? 'opacity-50 cursor-not-allowed' : 'hover:transform hover:scale-[1.02]'}
-                    ${game.completed
+    ${(isSwitchingGame || challenge.paused || challenge.completed || !challenge.timer.isRunning) ? 'opacity-50 cursor-not-allowed' : 'hover:transform hover:scale-[1.02]'}
+    ${game.completed
                       ? 'bg-[#1a1a1a] border-2 border-green-600'
                       : (activeGameIndex === index || pendingGameIndex === index)
-                        ? 'bg-[#1f1a14] border-2 gold-gradient-border'
+                        ? 'bg-gold-active border-3 gold-gradient-border-active game-card-active'
                         : 'bg-[#1a1a1a] border border-[#333333] hover:gold-border'
                     }`}
+
                 >
                   {!game.completed && (activeGameIndex === index || pendingGameIndex === index) && (
                     <div className="absolute top-0 left-0 w-full h-1 gold-gradient-bg"></div>
@@ -783,8 +765,8 @@ const ChallengeControlPage = ({ params }) => {
                             </span>
                           )}
                           {activeGameIndex === index && pendingGameIndex !== index && (
-                            <span className="px-2 py-0.5 gold-bg text-black text-xs rounded-full flex items-center whitespace-nowrap">
-                              <span className="w-1.5 h-1.5 bg-black rounded-full mr-1 animate-pulse"></span>
+                            <span className="active-badge">
+                              <span className="pulse-dot"></span>
                               Active
                             </span>
                           )}

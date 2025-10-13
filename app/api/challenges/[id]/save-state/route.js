@@ -41,10 +41,6 @@ export async function PUT(request, context) {
       return NextResponse.json({ message: 'Nur der Ersteller darf die Challenge aktualisieren' }, { status: 403 });
     }
 
-    // FIXED: Only sync SAFE fields. NEVER overwrite running timer state (duration, startTime, pausedTime, etc.)
-    // This prevents desync: Server calcs handle running timers; client displays from state.
-    // Sync: completed, paused, forfeited, currentWins, completedAt, pauseTimer (non-running).
-
     challenge.completed = updatedChallengeData.completed ?? challenge.completed;
     challenge.paused = updatedChallengeData.paused ?? challenge.paused;
     challenge.forfeited = updatedChallengeData.forfeited ?? challenge.forfeited;
@@ -53,52 +49,40 @@ export async function PUT(request, context) {
       challenge.completedAt = updatedChallengeData.completedAt;
     }
 
-    // Pause timer: Safe to sync (it's independent, not affecting main timers).
     if (!challenge.pauseTimer) {
       challenge.pauseTimer = {};
     }
     if (updatedChallengeData.pauseTimer) {
       challenge.pauseTimer.duration = updatedChallengeData.pauseTimer.duration ?? 0;
       challenge.pauseTimer.isRunning = updatedChallengeData.pauseTimer.isRunning ?? false;
-      // Don't overwrite startTime—let server set fresh if needed (e.g., in main PUT).
       if (challenge.pauseTimer.isRunning && !challenge.pauseTimer.startTime) {
         challenge.pauseTimer.startTime = new Date();
       }
     }
 
-    // Games: Sync wins/completed (safe), but NEVER timer fields for running games.
     if (updatedChallengeData.games && updatedChallengeData.games.length === challenge.games.length) {
       updatedChallengeData.games.forEach((updatedGame, index) => {
         const gameInDB = challenge.games[index];
         if (!gameInDB) return;
 
-        // Safe: Wins and completion status.
         gameInDB.currentWins = updatedGame.currentWins ?? gameInDB.currentWins;
         gameInDB.completed = updatedGame.completed ?? gameInDB.completed;
 
-        // DANGER: Skip all timer fields if running (prevents mid-run duration sets).
-        // Only sync if completed/stopped (final state).
         if (updatedGame.timer && !gameInDB.timer.isRunning && !gameInDB.completed) {
-          // Even for paused/stopped, prefer server calc— but if client provides final duration, ok.
-          // For now, skip to be safe: Rely on main PUT 'stop-game-timer' etc.
+
           console.warn(`Skipping timer sync for game ${index} in save-state (running/paused)`);
         } else if (updatedGame.timer && (gameInDB.completed || !gameInDB.timer.isRunning)) {
-          // Only for completed: Allow final duration sync if needed.
           gameInDB.timer.duration = updatedGame.timer.duration ?? gameInDB.timer.duration;
           gameInDB.timer.endTime = updatedGame.timer.endTime ?? gameInDB.timer.endTime;
         }
-        // NEVER: Don't set startTime, pausedTime, lastPauseTime, isRunning here—handled in main actions.
+
       });
     }
-
-    // Main challenge timer: NEVER sync fields here—only in specific PUT actions (start/pause/stop).
-    // Ignore updatedChallengeData.timer entirely.
 
     await challenge.save();
 
     console.log(`Challenge ${id} state safely saved (timers preserved)`);
 
-    // Emit update (as in your frontend).
     if (typeof global.io !== 'undefined') {
       global.io.to(`challenge-${id}`).emit('challenge-updated', challenge);
     }

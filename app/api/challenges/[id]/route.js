@@ -123,16 +123,14 @@ export async function PUT(request, context) {
     if (!challenge.pauseTimer) {
       challenge.pauseTimer = {};
     }
-    // FIXED: Only handle client-provided times in STOP/COMPLETE actions. Ignore for start/pause/increment to avoid mid-run sets.
     const isStopAction = ['stop-all-timers', 'stop-challenge-timer', 'stop-game-timer', 'forfeited-challenge'].includes(action);
     if (isStopAction && challengeTime !== undefined) {
-      // Trust client for challenge stop (as original), but only set if stopping.
       if (!challenge.timer.isRunning) challenge.timer.duration = challengeTime;
     }
     if (isStopAction && gameTimers && Array.isArray(gameTimers) && challenge.games) {
       challenge.games.forEach((game, index) => {
         if (gameTimers[index] !== undefined && !game.timer.isRunning) {
-          game.timer.duration = gameTimers[index];  // Only for stopped games.
+          game.timer.duration = gameTimers[index];
         }
       });
     }
@@ -145,7 +143,6 @@ export async function PUT(request, context) {
 
     switch (action) {
       case 'start-challenge-timer':
-        // ... (unchanged from previous fix)
         const now = new Date();
         if (!challenge.timer.isRunning) {
           if (!challenge.timer.startTime) {
@@ -208,10 +205,9 @@ export async function PUT(request, context) {
             challenge.pauseTimer.duration = pauseTime;
           }
 
-          // Pause all game timers
           challenge.games.forEach((game) => {
             if (game.timer.isRunning) {
-              game.timer.lastPauseTime = now;  // Set for later resume
+              game.timer.lastPauseTime = now;
               game.timer.isRunning = false;
             }
           });
@@ -236,7 +232,7 @@ export async function PUT(request, context) {
         }
         break;
 
-      case 'forfeited-challenge':  // Fixed typo from 'forfied'
+      case 'forfeited-challenge':
         challenge.forfeited = true;
         if (challenge.timer.startTime) {
           const endTime = new Date();
@@ -272,45 +268,37 @@ export async function PUT(request, context) {
         if (gameIndex !== undefined) {
           const now = new Date();
 
-          // FIXED: Pause (don't stop) other running games—preserves their startTime for future resumes.
           for (let i = 0; i < challenge.games.length; i++) {
             if (i !== gameIndex && challenge.games[i].timer.isRunning) {
               const otherGame = challenge.games[i];
 
-              // Pause logic: Set lastPauseTime, isRunning=false (no duration set, no clear).
+
               otherGame.timer.lastPauseTime = now;
               otherGame.timer.isRunning = false;
-              // DO NOT: Set duration, clear startTime/pausedTime—keep for resume.
 
-              console.log(`Paused other game ${i} during switch to ${gameIndex}`);  // Optional log.
             }
           }
 
-          // Start/resume the target game (unchanged—handles new or resume).
           const game = challenge.games[gameIndex];
           if (game && !game.completed) {
-            // If paused, resume by adding pause duration to pausedTime (preserve startTime).
             if (game.timer.lastPauseTime) {
               const pauseDuration = now - game.timer.lastPauseTime;
               game.timer.pausedTime += pauseDuration;
               game.timer.lastPauseTime = null;
             }
 
-            // Only set startTime if this is a brand-new timer (no prior start).
+
             if (!game.timer.startTime) {
               game.timer.startTime = now;
-              game.timer.pausedTime = 0;  // Ensure 0 for new starts.
+              game.timer.pausedTime = 0;
             }
 
-            // Reset lastPauseTime if somehow set (safety).
+
             if (game.timer.lastPauseTime) {
               game.timer.lastPauseTime = null;
             }
 
             game.timer.isRunning = true;
-
-            // Optional log for diagnosis.
-            console.log(`Started/resumed game ${gameIndex}: startTime=${game.timer.startTime?.toISOString()}, pausedTime=${game.timer.pausedTime}`);
           }
         }
         break;
@@ -320,7 +308,7 @@ export async function PUT(request, context) {
         if (gameIndex !== undefined) {
           const game = challenge.games[gameIndex];
           if (game && game.timer.isRunning) {
-            game.timer.lastPauseTime = new Date();  // Ensure set for resume
+            game.timer.lastPauseTime = new Date();
             game.timer.isRunning = false;
           }
         }
@@ -345,26 +333,16 @@ export async function PUT(request, context) {
           const game = challenge.games[gameIndex];
           if (game) {
             game.currentWins += 1;
-            // LOG FOR DIAGNOSIS
-            console.log(`Win increment for game ${gameIndex}: currentWins=${game.currentWins}/${game.winCount}, pre-completion state:`, {
-              startTime: game.timer.startTime?.toISOString(),
-              pausedTime: game.timer.pausedTime,
-              isRunning: game.timer.isRunning,
-              durationBefore: game.timer.duration,
-              calculatedElapsedBefore: calculateElapsed(game.timer) / 1000 + 's'
-            });
             if (game.currentWins >= game.winCount) {
               game.completed = true;
               if (game.timer.isRunning && game.timer.startTime) {
                 const elapsed = calculateElapsed(game.timer);
-                game.timer.duration = elapsed;  // Server calc - full time
+                game.timer.duration = elapsed;
                 game.timer.endTime = new Date();
                 game.timer.isRunning = false;
                 game.timer.startTime = null;
                 game.timer.pausedTime = 0;
                 game.timer.lastPauseTime = null;
-                // LOG
-                console.log(`Game ${gameIndex} completed: final duration=${elapsed / 1000}s`);
               }
             }
             const allCompleted = challenge.games.every(g => g.completed);

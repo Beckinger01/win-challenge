@@ -15,14 +15,12 @@
   --gold-hover: #b08a2e;
   --gold-dark: #907020;
   --gold-light: #e4c675;
-  --gold-gradient: linear-gradient(
-    135deg,
-    var(--gold-light) 0%,
-    var(--gold-primary) 25%,
-    var(--gold-tertiary) 50%,
-    var(--gold-secondary) 75%,
-    var(--gold-light) 100%
-  );
+  --gold-gradient: linear-gradient(135deg,
+      var(--gold-light) 0%,
+      var(--gold-primary) 25%,
+      var(--gold-tertiary) 50%,
+      var(--gold-secondary) 75%,
+      var(--gold-light) 100%);
 }
 
 body {
@@ -50,6 +48,8 @@ body {
 
 .game-card-active {
   animation: pulse-border 2s infinite;
+  position: relative;
+  z-index: 10;
 }
 
 .transition-all {
@@ -186,9 +186,22 @@ body {
 .gold-gradient-border {
   border: 2px solid transparent;
   background: linear-gradient(#151515, #151515) padding-box,
-              var(--gold-gradient) border-box;
+    var(--gold-gradient) border-box;
   background-size: 200% 200%;
   animation: shimmerEffect 6s infinite linear;
+}
+
+.gold-gradient-border-active {
+  border: 3px solid transparent;
+  background: linear-gradient(#151515, #151515) padding-box,
+    var(--gold-gradient) border-box;
+  background-size: 200% 200%;
+  animation: shimmerEffect 2s infinite linear;
+  box-shadow:
+    0 0 10px rgba(217, 164, 65, 0.3),
+    0 0 20px rgba(217, 164, 65, 0.2),
+    inset 0 0 10px rgba(217, 164, 65, 0.1);
+  transition: all 0.3s ease;
 }
 
 .gold-shimmer-text {
@@ -211,9 +224,11 @@ body {
   0% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
+
   100% {
     background-position: 0% 50%;
   }
@@ -227,15 +242,16 @@ body {
   0% {
     box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.4);
   }
+
   70% {
     box-shadow: 0 0 0 10px rgba(255, 215, 0, 0);
   }
+
   100% {
     box-shadow: 0 0 0 0 rgba(255, 215, 0, 0);
   }
 }
 
-/* Hover Gold Gradient Effekt */
 .hover-gold-gradient:hover {
   background: var(--gold-gradient);
   border-color: transparent;
@@ -250,4 +266,51 @@ body {
 
 .choose-card {
   @apply bg-gray-900 text-white rounded-2xl p-6 m-4 border border-[#a6916e] max-w-lg;
+}
+
+.bg-gold-active {
+  background: linear-gradient(135deg, #1f1a14 0%, #2a2314 100%);
+  position: relative;
+}
+
+.bg-gold-active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at top-left, rgba(217, 164, 65, 0.05) 0%, transparent 70%);
+  z-index: -1;
+  border-radius: inherit;
+}
+
+.active-badge {
+  @apply px-3 py-1.5 text-sm font-semibold rounded-full flex items-center whitespace-nowrap shadow-lg;
+  background: var(--gold-gradient);
+  color: black;
+  animation: pulseEffect 1.5s infinite, shimmerEffect 3s infinite linear;
+  box-shadow: 0 2px 8px rgba(217, 164, 65, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.active-badge .pulse-dot {
+  @apply w-2 h-2 bg-black rounded-full mr-2;
+  animation: pulse 1s infinite;
+}
+
+@media (max-width: 640px) {
+  .gold-gradient-border-active {
+    border-width: 2px;
+    box-shadow: 0 0 5px rgba(217, 164, 65, 0.3);
+  }
+
+  .active-badge {
+    @apply px-2 py-1 text-xs;
+  }
+}
+
+.game-card-active:hover {
+  transform: none;
+  box-shadow: inherit;
 }

@@ -36,8 +36,8 @@ export const metadata = {
     card: "summary_large_image",
     title: "Win-Challenge",
     description: "Create or watch Win-Challenges",
-    images: ["/images/og-image.jpg"], // Pfad zu Ihrem Twitter-Bild anpassen
-    creator: "@winchallenges", // Ihren Twitter-Handle anpassen
+    images: ["/images/og-image.jpg"],
+    creator: "@winchallenges",
   },
 
   // Kanonische URL

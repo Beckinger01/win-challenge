@@ -158,10 +158,10 @@ const ChallengeControlPage = ({ params }) => {
       setGameTimers((prevTimers) =>
         prevTimers.map((timer, index) => {
           const game = challenge.games[index];
-          if (timer.isRunning && !game?.completed) {  // FIXED: Per-game check.
+          if (timer.isRunning && !game?.completed && !challenge.completed) {  // FIXED: Also check challenge completed.
             return { ...timer, value: timer.value + 1000 };
           }
-          return timer;
+          return timer;  // Paused/inactive: Keep current value (from getCurrentTimerValue on updates).
         })
       );
 
@@ -459,14 +459,17 @@ const ChallengeControlPage = ({ params }) => {
       setIsSwitchingGame(true);
       setPendingGameIndex(index);
 
+      // FIXED: Ensure challenge is running.
       if (!challenge.timer.isRunning) {
         await updateChallenge('start-challenge-timer');
       }
 
+      // FIXED: Pause (don't stop) the old active game—preserves startTime for later resume.
       if (activeGameIndex !== null) {
-        await updateChallenge('stop-game-timer', activeGameIndex);
+        await updateChallenge('pause-game-timer', activeGameIndex);  // Changed from 'stop-game-timer'
       }
 
+      // Start/resume the new game (server will resume if previously paused).
       const result = await updateChallenge('start-game-timer', index);
 
       if (!result) {
@@ -500,6 +503,7 @@ const ChallengeControlPage = ({ params }) => {
       }, 1000);
     }
   };
+
 
   const increaseWinCount = (index, e) => {
     e.stopPropagation();

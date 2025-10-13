@@ -270,45 +270,51 @@ export async function PUT(request, context) {
 
       case 'start-game-timer':
         if (gameIndex !== undefined) {
-          // FIXED: Stop other running game timers (unchanged)
+          const now = new Date();
+
+          // FIXED: Pause (don't stop) other running games—preserves their startTime for future resumes.
           for (let i = 0; i < challenge.games.length; i++) {
             if (i !== gameIndex && challenge.games[i].timer.isRunning) {
               const otherGame = challenge.games[i];
-              otherGame.timer.duration = calculateElapsed(otherGame.timer);
+
+              // Pause logic: Set lastPauseTime, isRunning=false (no duration set, no clear).
+              otherGame.timer.lastPauseTime = now;
               otherGame.timer.isRunning = false;
-              otherGame.timer.startTime = null;
-              otherGame.timer.pausedTime = 0;
-              otherGame.timer.lastPauseTime = null;
+              // DO NOT: Set duration, clear startTime/pausedTime—keep for resume.
+
+              console.log(`Paused other game ${i} during switch to ${gameIndex}`);  // Optional log.
             }
           }
 
-          // FIXED: Handle both NEW START and RESUME
+          // Start/resume the target game (unchanged—handles new or resume).
           const game = challenge.games[gameIndex];
           if (game && !game.completed) {
-            const now = new Date();
-
-            // If paused, resume by adding pause duration to pausedTime (preserve startTime)
+            // If paused, resume by adding pause duration to pausedTime (preserve startTime).
             if (game.timer.lastPauseTime) {
               const pauseDuration = now - game.timer.lastPauseTime;
               game.timer.pausedTime += pauseDuration;
               game.timer.lastPauseTime = null;
             }
 
-            // Only set startTime if this is a brand-new timer (no prior start)
+            // Only set startTime if this is a brand-new timer (no prior start).
             if (!game.timer.startTime) {
               game.timer.startTime = now;
-              game.timer.pausedTime = 0;  // Ensure 0 for new starts
+              game.timer.pausedTime = 0;  // Ensure 0 for new starts.
             }
 
-            // Reset lastPauseTime if somehow set (but shouldn't be for new/running)
+            // Reset lastPauseTime if somehow set (safety).
             if (game.timer.lastPauseTime) {
               game.timer.lastPauseTime = null;
             }
 
             game.timer.isRunning = true;
+
+            // Optional log for diagnosis.
+            console.log(`Started/resumed game ${gameIndex}: startTime=${game.timer.startTime?.toISOString()}, pausedTime=${game.timer.pausedTime}`);
           }
         }
         break;
+
 
       case 'pause-game-timer':
         if (gameIndex !== undefined) {

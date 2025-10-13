@@ -286,40 +286,46 @@ export async function PUT(request, context) {
 
       case 'start-game-timer':
         if (gameIndex !== undefined) {
+          // Stoppe alle anderen laufenden Game-Timer
           for (let i = 0; i < challenge.games.length; i++) {
             if (i !== gameIndex && challenge.games[i].timer.isRunning) {
               const otherGame = challenge.games[i];
               const now = new Date();
 
               if (otherGame.timer.startTime) {
-                const runningTime = now - otherGame.timer.startTime;
-                otherGame.timer.duration = runningTime - otherGame.timer.pausedTime;
+                // Berechne die Zeit seit dem letzten Start
+                const startTime = new Date(otherGame.timer.startTime);
+                const currentSessionTime = now - startTime - (otherGame.timer.pausedTime || 0);
+
+                // Addiere nur die positive Zeit zur Duration
+                otherGame.timer.duration = (otherGame.timer.duration || 0) + Math.max(0, currentSessionTime);
+
+                console.log(`Stopped timer for game ${i}, session time: ${currentSessionTime}ms, total duration: ${otherGame.timer.duration}ms`);
               }
 
-              otherGame.timer.lastPauseTime = now;
+              // Setze den Timer komplett zurück
               otherGame.timer.isRunning = false;
-
-              console.log(`Stopped timer for game ${i} before starting game ${gameIndex}`);
+              otherGame.timer.startTime = null;
+              otherGame.timer.pausedTime = 0;
+              otherGame.timer.lastPauseTime = null;
             }
           }
+
+          // Starte den neuen Game-Timer
           const game = challenge.games[gameIndex];
           if (game && !game.completed) {
             const now = new Date();
 
-            if (!game.timer.startTime) {
-              game.timer.startTime = now;
-            } else if (game.timer.lastPauseTime) {
-              const pauseDuration = now - game.timer.lastPauseTime;
-              game.timer.pausedTime += pauseDuration;
-              game.timer.lastPauseTime = null;
-            }
-
+            // Wichtig: Setze alle Timer-Eigenschaften zurück für einen sauberen Start
+            game.timer.startTime = now;
+            game.timer.pausedTime = 0;
+            game.timer.lastPauseTime = null;
             game.timer.isRunning = true;
-            console.log(`Started timer for game ${gameIndex}`);
+
+            console.log(`Started timer for game ${gameIndex}, previous duration: ${game.timer.duration || 0}ms`);
           }
         }
         break;
-
       case 'pause-game-timer':
         if (gameIndex !== undefined) {
           const game = challenge.games[gameIndex];
@@ -333,12 +339,16 @@ export async function PUT(request, context) {
       case 'stop-game-timer':
         if (gameIndex !== undefined) {
           const game = challenge.games[gameIndex];
-          if (game && game.timer.startTime) {
+          if (game && game.timer.startTime && game.timer.isRunning) {
             const endTime = new Date();
-            const runningTime = endTime - game.timer.startTime;
+            const currentSessionTime = endTime - new Date(game.timer.startTime) - (game.timer.pausedTime || 0);
+
+            game.timer.duration = (game.timer.duration || 0) + Math.max(0, currentSessionTime);
             game.timer.endTime = endTime;
-            game.timer.duration = runningTime - game.timer.pausedTime;
             game.timer.isRunning = false;
+
+            game.timer.startTime = null;
+            game.timer.pausedTime = 0;
           }
         }
         break;
@@ -348,24 +358,13 @@ export async function PUT(request, context) {
           const game = challenge.games[gameIndex];
           if (game) {
             game.currentWins += 1;
+
+            // Nur wenn das Spiel jetzt abgeschlossen ist, stoppe den Timer
             if (game.currentWins >= game.winCount) {
               game.completed = true;
-
-              if (game.timer.isRunning) {
-                const now = new Date();
-                let totalDuration = 0;
-
-                if (game.timer.startTime) {
-                  const runningTime = now - game.timer.startTime;
-                  totalDuration = runningTime - game.timer.pausedTime;
-                }
-
-                game.timer.endTime = now;
-                game.timer.duration = totalDuration;
-                game.timer.isRunning = false;
-              }
             }
 
+            // Prüfe ob alle Spiele abgeschlossen sind
             const allCompleted = challenge.games.every(g => g.completed);
             if (allCompleted) {
               challenge.completed = true;

@@ -23,7 +23,7 @@ export const metadata = {
     type: "website",
     images: [
       {
-        url: "/images/android-chrome-512x512", // Pfad zu Ihrem OG-Bild anpassen
+        url: "/images/android-chrome-512x512",
         width: 1200,
         height: 630,
         alt: "Win-Challenge - Create or watch Win-Challenges",

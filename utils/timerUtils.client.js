@@ -1,4 +1,3 @@
-
 export const formatTime = (milliseconds) => {
   if (!milliseconds) return '00:00:00';
 
@@ -15,18 +14,22 @@ export const formatTime = (milliseconds) => {
 };
 
 export const getCurrentTimerValue = (timer) => {
-  if (!timer || !timer.startTime) return 0;
+  if (!timer) return 0;
 
-  const now = new Date();
-  let elapsed = 0;
+  // Basis-Duration (bereits gespeicherte Zeit)
+  let totalTime = timer.duration || 0;
 
-  if (timer.isRunning) {
-    elapsed = now - new Date(timer.startTime) - (timer.pausedTime || 0);
-  } else if (timer.endTime) {
-    elapsed = timer.duration;
-  } else if (timer.lastPauseTime) {
-    elapsed = new Date(timer.lastPauseTime) - new Date(timer.startTime) - (timer.pausedTime || 0);
+  // Wenn der Timer läuft, addiere die aktuelle Session-Zeit
+  if (timer.isRunning && timer.startTime) {
+    const now = new Date();
+    const currentSessionTime = now - new Date(timer.startTime) - (timer.pausedTime || 0);
+    totalTime += Math.max(0, currentSessionTime);
+  }
+  // Wenn der Timer pausiert ist, addiere die Zeit bis zur Pause
+  else if (!timer.isRunning && timer.startTime && timer.lastPauseTime && !timer.endTime) {
+    const pausedSessionTime = new Date(timer.lastPauseTime) - new Date(timer.startTime) - (timer.pausedTime || 0);
+    totalTime += Math.max(0, pausedSessionTime);
   }
 
-  return Math.max(0, elapsed);
+  return Math.max(0, totalTime);
 };

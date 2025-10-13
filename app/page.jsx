@@ -7,6 +7,9 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import CookieBanner from '@components/CookieBanner';
 
+import Prev1 from "../public/images/Prev1.webp"
+import Prev2 from "../public/images/Prev2.webp"
+
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
   visible: (custom) => ({
@@ -174,7 +177,7 @@ const Home = () => {
                 transition={{ duration: 0.3 }}
               >
                 <img
-                  src="images/800x500.svg"
+                  src={Prev1}
                   alt="Choose Your Challenge Type"
                   className="w-full h-full object-cover"
                 />
@@ -226,7 +229,7 @@ const Home = () => {
                 transition={{ duration: 0.3 }}
               >
                 <img
-                  src="images/800x500.svg"
+                  src="https://placehold.co/800x500/a0a0a/d9a441?text=Comming+Soon"
                   alt="Live Streaming"
                   className="w-full h-full object-cover"
                 />
@@ -276,7 +279,7 @@ const Home = () => {
                 transition={{ duration: 0.3 }}
               >
                 <img
-                  src="images/800x500.svg"
+                  src={Prev2}
                   alt="Customizable Timers"
                   className="w-full h-full object-cover"
                 />

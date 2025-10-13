@@ -343,45 +343,47 @@ export async function PUT(request, context) {
         break;
 
       case 'increase-win-count':
-        if (gameIndex !== undefined) {
-          const game = challenge.games[gameIndex];
-          if (game) {
-            game.currentWins += 1;
+  if (gameIndex !== undefined) {
+    const game = challenge.games[gameIndex];
+    if (game) {
+      // Increment the win count
+      game.currentWins += 1;
 
-            // Check if game is now complete
-            if (game.currentWins >= game.winCount) {
-              game.completed = true;
+      // Check if the game has now achieved all wins
+      if (game.currentWins >= game.winCount) {
+        // Mark game as completed
+        game.completed = true;
 
-              // Stop the timer if it's running
-              if (game.timer.isRunning && game.timer.startTime) {
-                const endTime = new Date();
-                const elapsed = endTime - new Date(game.timer.startTime) - (game.timer.pausedTime || 0);
-                game.timer.duration = (game.timer.duration || 0) + Math.max(0, elapsed);
-                game.timer.endTime = endTime;
-                game.timer.isRunning = false;
-                game.timer.startTime = null;
-                game.timer.pausedTime = 0;
-              }
-            }
-
-            // Check if all games are completed
-            const allCompleted = challenge.games.every(g => g.completed);
-            if (allCompleted) {
-              challenge.completed = true;
-              challenge.completedAt = new Date();
-
-              // Stop challenge timer if running
-              if (challenge.timer.isRunning && challenge.timer.startTime) {
-                const endTime = new Date();
-                const runningTime = endTime - challenge.timer.startTime;
-                challenge.timer.endTime = endTime;
-                challenge.timer.duration = runningTime - challenge.timer.pausedTime;
-                challenge.timer.isRunning = false;
-              }
-            }
-          }
+        // Explicitly stop the game timer if it is running
+        if (game.timer.isRunning && game.timer.startTime) {
+          const endTime = new Date();
+          const elapsed = endTime - new Date(game.timer.startTime) - (game.timer.pausedTime || 0);
+          game.timer.duration = (game.timer.duration || 0) + Math.max(0, elapsed);
+          game.timer.endTime = endTime;
+          game.timer.isRunning = false;
+          game.timer.startTime = null;
+          game.timer.pausedTime = 0;
         }
-        break;
+      }
+
+      // Check if *all* games are completed
+      const allCompleted = challenge.games.every(g => g.completed);
+      if (allCompleted) {
+        challenge.completed = true;
+        challenge.completedAt = new Date();
+
+        // Stop challenge timer if it is running
+        if (challenge.timer.isRunning && challenge.timer.startTime) {
+          const endTime = new Date();
+          const runningTime = endTime - challenge.timer.startTime;
+          challenge.timer.endTime = endTime;
+          challenge.timer.duration = runningTime - challenge.timer.pausedTime;
+          challenge.timer.isRunning = false;
+        }
+      }
+    }
+  }
+  break;
 
       default:
         return NextResponse.json(

@@ -1,4 +1,3 @@
-// app/api/reset-password/confirm/route.js
 import { connectToDB } from '@/utils/database';
 import User from '@/models/user';
 import { NextResponse } from 'next/server';
@@ -10,7 +9,6 @@ export async function POST(request) {
 
         const { token, password } = await request.json();
 
-        // Find user with this token and not expired
         const user = await User.findOne({
             resetToken: token,
             resetTokenExpiry: { $gt: Date.now() }
@@ -23,7 +21,6 @@ export async function POST(request) {
             );
         }
 
-        // Hash new password and update user
         const hashedPassword = await bcrypt.hash(password, 10);
         user.password = hashedPassword;
         user.resetToken = undefined;

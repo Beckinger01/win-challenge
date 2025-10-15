@@ -1,4 +1,3 @@
-// app/api/reset-password/route.js
 import { connectToDB } from '@/utils/database';
 import User from '@/models/user';
 import { NextResponse } from 'next/server';
@@ -13,20 +12,16 @@ export async function POST(request) {
         const user = await User.findOne({ email });
 
         if (!user) {
-            // Even if user doesn't exist, return success for security
             return NextResponse.json({ success: true });
         }
 
-        // Generate token and expiry
         const resetToken = crypto.randomBytes(32).toString('hex');
-        const tokenExpiry = Date.now() + 3600000; // 1 hour from now
+        const tokenExpiry = Date.now() + 3600000;
 
-        // Save to user
         user.resetToken = resetToken;
         user.resetTokenExpiry = tokenExpiry;
         await user.save();
 
-        // Create a transport for email
         const transporter = nodemailer.createTransport({
             host: process.env.EMAIL_SERVER_HOST,
             port: process.env.EMAIL_SERVER_PORT,
@@ -36,7 +31,6 @@ export async function POST(request) {
             }
         });
 
-        // Send email
         await transporter.sendMail({
             from: process.env.EMAIL_FROM,
             to: user.email,

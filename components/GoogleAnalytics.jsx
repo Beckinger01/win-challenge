@@ -4,55 +4,45 @@ import { useEffect } from "react";
 import Script from "next/script";
 
 export default function GoogleAnalytics() {
-  useEffect(() => {
-    // Check if user has consented to cookies
-    const cookieConsent = localStorage.getItem("cookieConsent");
+  const consent = typeof window !== "undefined" ? localStorage.getItem("cookieConsent") : null;
 
-    // If we have the Google Analytics tags loaded but user has only consented to essential cookies,
-    // we should respect this and disable tracking
-    if (cookieConsent === "essential" && window.gtag) {
-      window.gtag('consent', 'update', {
-        'analytics_storage': 'denied'
-      });
-    }
-  }, []);
+  if (consent !== "all") {
+    return null;
+  }
+
+  gtag('consent', 'default', {
+    ad_storage: 'denied',
+    analytics_storage: 'denied',
+  });
+
+  if (cookieConsent === 'all') {
+    gtag('consent', 'update', {
+      ad_storage: 'granted',
+      analytics_storage: 'granted',
+    });
+  }
 
   return (
     <>
+      {/* Google AdSense – nur bei Zustimmung */}
+      <Script
+        async
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1511082465942403"
+        crossOrigin="anonymous"
+        strategy="afterInteractive"
+      />
 
-      <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1511082465942403"
-        crossorigin="anonymous"></script>
-        
-      {/* Load the Google Analytics script */}
+      {/* Google Analytics */}
       <Script
         src="https://www.googletagmanager.com/gtag/js?id=G-V4JSECSYVT"
         strategy="afterInteractive"
       />
-
-      {/* Initialize Google Analytics with consent mode */}
       <Script id="google-analytics" strategy="afterInteractive">
         {`
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
-          
-          // Initialize with consent mode
-          gtag('consent', 'default', {
-            'analytics_storage': 'denied'
-          });
-          
-          gtag('config', 'G-V4JSECSYVT', {
-            page_path: window.location.pathname,
-            anonymize_ip: true
-          });
-          
-          // Check for existing consent
-          const cookieConsent = localStorage.getItem("cookieConsent");
-          if (cookieConsent === "all") {
-            gtag('consent', 'update', {
-              'analytics_storage': 'granted'
-            });
-          }
+          gtag('config', 'G-V4JSECSYVT', { anonymize_ip: true });
         `}
       </Script>
     </>

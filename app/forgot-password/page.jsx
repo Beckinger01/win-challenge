@@ -23,13 +23,13 @@ export default function ForgotPassword() {
 
             if (response.ok) {
                 setSuccess(true);
-                setMessage('Wenn ein Konto mit dieser E-Mail existiert, erhältst du in Kürze eine E-Mail mit weiteren Anweisungen.');
+                setMessage('If an account exists with this email, you will receive an email shortly with further instructions.');
             } else {
                 const data = await response.json();
-                setMessage(data.message || 'Ein Fehler ist aufgetreten. Bitte versuche es später erneut.');
+                setMessage(data.message || 'An error occurred. Please try again later.');
             }
         } catch (error) {
-            setMessage('Ein Fehler ist aufgetreten. Bitte versuche es später erneut.');
+            setMessage('An error occurred. Please try again later.');
         } finally {
             setIsSubmitting(false);
         }
@@ -38,7 +38,7 @@ export default function ForgotPassword() {
     return (
         <section className='w-full h-screen flex items-center justify-center'>
             <div className="max-w-md w-full px-6 py-8 bg-[#151515] rounded-lg gold-gradient-border shadow-lg">
-                <h1 className="text-2xl font-bold gold-shimmer-text mb-6 text-center">Passwort zurücksetzen</h1>
+                <h1 className="text-2xl font-bold gold-shimmer-text mb-6 text-center">Reset password</h1>
 
                 {success ? (
                     <div className="space-y-6">
@@ -46,14 +46,14 @@ export default function ForgotPassword() {
                             {message}
                         </div>
                         <Link href="/login" className="block text-center gold-text hover:underline">
-                            Zurück zum Login
+                            Back to SignIn
                         </Link>
                     </div>
                 ) : (
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
                             <label htmlFor="email" className="block text-gray-300 mb-2">
-                                E-Mail Adresse
+                                E-Mail
                             </label>
                             <input
                                 id="email"

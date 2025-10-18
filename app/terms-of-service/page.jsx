@@ -315,7 +315,7 @@ const TermsOfServicePage = () => {
                                     </p>
                                 </div>
                                 <p className="text-sm text-gray-400 mt-4">
-                                    <strong>Stand:</strong> Januar 2025
+                                    <strong>Stand:</strong> Oktober 2025
                                 </p>
                             </section>
                         </div>
@@ -599,7 +599,7 @@ const TermsOfServicePage = () => {
                                     </p>
                                 </div>
                                 <p className="text-sm text-gray-400 mt-4">
-                                    <strong>Last updated:</strong> January 2025
+                                    <strong>Last updated:</strong> October 2025
                                 </p>
                             </section>
                         </div>

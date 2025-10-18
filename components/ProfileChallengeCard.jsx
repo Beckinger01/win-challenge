@@ -35,7 +35,6 @@ const ProfileChallengeCard = ({ name, timer = {}, id, startDate, type, gameCount
   const [creator, setCreator] = useState(creatorUsername || null);
 
   useEffect(() => {
-    // Check if the current user is the creator of this challenge
     const checkCreator = async () => {
       if (!session?.user) return;
 
@@ -50,20 +49,17 @@ const ProfileChallengeCard = ({ name, timer = {}, id, startDate, type, gameCount
       }
     };
 
-    // Fetch creator info if not provided
     const fetchCreator = async () => {
       if (creatorUsername) {
-        return; // Already have creator info from props
+        return;
       }
 
       try {
-        // First get the challenge to get the creator ID
         const challengeResponse = await fetch(`/api/challenges/${id}`);
         if (challengeResponse.ok) {
           const challengeData = await challengeResponse.json();
 
           if (challengeData.creator) {
-            // Then get the creator info
             const userResponse = await fetch(`/api/user/${challengeData.creator}`);
             if (userResponse.ok) {
               const userData = await userResponse.json();
@@ -90,16 +86,12 @@ const ProfileChallengeCard = ({ name, timer = {}, id, startDate, type, gameCount
     }
 
     if (isActive) {
-      // Challenge is live
       if (isCreator) {
-        // User is the creator, go to control page
         window.location.href = `/challenge/${id}`;
       } else {
-        // User is not the creator, go to public view
         window.location.href = `/challenge/public/${id}`;
       }
     } else {
-      // Challenge is not live, go to view page
       window.location.href = `/challenge-view/${id}`;
     }
   };
@@ -114,20 +106,16 @@ const ProfileChallengeCard = ({ name, timer = {}, id, startDate, type, gameCount
   };
 
   const confirmDelete = async () => {
-    // Double-check server-side if user is creator
     try {
       setDeleteLoading(true);
       setDeleteError(null);
 
-      // First, check if user is authorized to delete
       const authCheck = await fetch(`/api/challenges/${id}/authorize`);
       const authData = await authCheck.json();
 
       if (!authData.authorized) {
         throw new Error("Du bist nicht berechtigt, diese Challenge zu löschen.");
       }
-
-      // If authorized, proceed with deletion
       const response = await fetch(`/api/challenges/${id}`, {
         method: 'DELETE',
         headers: {
@@ -140,7 +128,6 @@ const ProfileChallengeCard = ({ name, timer = {}, id, startDate, type, gameCount
         throw new Error(errorData.message || "Fehler beim Löschen der Challenge");
       }
 
-      // On success, refresh the page to show updated challenge list
       window.location.reload();
     } catch (error) {
       console.error("Error deleting challenge:", error);

@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import UsernameEditForm from "@/components/settings/UsernameEditForm";
 import EmailEditForm from "@/components/settings/EmailEditForm";
 import PasswordEditForm from "@/components/settings/PasswordEditForm";
+import DeleteAccount from "./settings/DeleteAccount";
 
 const Settings = () => {
   const { data: session, update } = useSession();
@@ -121,6 +122,9 @@ const Settings = () => {
           />
         </>
       )}
+      <DeleteAccount
+        showMessage={showMessage}
+      />
     </div>
   );
 };

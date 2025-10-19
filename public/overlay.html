@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Challenge Overlay</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: transparent;
+            color: white;
+            overflow: hidden;
+        }
+
+        .overlay-container {
+            width: 400px;
+            height: 600px;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(20, 20, 20, 0.95) 100%);
+            border: 2px solid #a6916e;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(166, 145, 110, 0.3);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .challenge-header {
+            text-align: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #a6916e;
+        }
+
+        .challenge-name {
+            font-size: 24px;
+            font-weight: bold;
+            background: linear-gradient(90deg, #d4af37, #f4e5b8, #d4af37);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+            margin-bottom: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .challenge-timer {
+            font-size: 32px;
+            font-weight: bold;
+            color: #d4af37;
+            text-shadow: 0 0 10px rgba(212, 175, 55, 0.8);
+            letter-spacing: 2px;
+        }
+
+        .challenge-status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+
+        .status-running {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid #22c55e;
+            color: #22c55e;
+            animation: pulse 2s infinite;
+        }
+
+        .status-paused {
+            background: rgba(234, 179, 8, 0.2);
+            border: 1px solid #eab308;
+            color: #eab308;
+        }
+
+        .status-completed {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid #3b82f6;
+            color: #3b82f6;
+        }
+
+        .status-forfeited {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+            color: #ef4444;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.6;
+            }
+        }
+
+        .games-container {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            margin-top: 10px;
+        }
+
+        .games-scroll {
+            animation: scroll-up 15s linear infinite;
+        }
+
+        .games-scroll.paused {
+            animation-play-state: paused;
+        }
+
+        @keyframes scroll-up {
+            0% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-50%);
+            }
+
+            100% {
+                transform: translateY(0);
+            }
+        }
+
+        .game-card {
+            background: linear-gradient(135deg, rgba(166, 145, 110, 0.1) 0%, rgba(166, 145, 110, 0.05) 100%);
+            border: 1px solid rgba(166, 145, 110, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .game-card:hover {
+            border-color: #a6916e;
+            box-shadow: 0 4px 20px rgba(166, 145, 110, 0.2);
+        }
+
+        .game-card.completed {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 100%);
+            border-color: rgba(34, 197, 94, 0.5);
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .game-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #d4af37;
+        }
+
+        .game-progress {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .win-count {
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .win-count.completed {
+            color: #22c55e;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #d4af37, #f4e5b8);
+            transition: width 0.5s ease;
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+        }
+
+        .progress-fill.completed {
+            background: linear-gradient(90deg, #22c55e, #4ade80);
+        }
+
+        .game-timer {
+            font-size: 20px;
+            font-weight: bold;
+            color: #a6916e;
+            text-align: center;
+            margin-top: 5px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .game-timer.running {
+            color: #22c55e;
+            animation: pulse 2s infinite;
+        }
+
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .spinner {
+            border: 4px solid rgba(166, 145, 110, 0.2);
+            border-top: 4px solid #a6916e;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error {
+            color: #ef4444;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .checkmark {
+            display: inline-block;
+            color: #22c55e;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app"></div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const challengeId = urlParams.get('id');
+
+        if (!challengeId) {
+            document.getElementById('app').innerHTML = `
+                <div class="overlay-container">
+                    <div class="error">
+                        <h2>Error: No Challenge ID</h2>
+                        <p>Please add ?id=YOUR_CHALLENGE_ID to the URL</p>
+                    </div>
+                </div>
+            `;
+        } else {
+            initOverlay(challengeId);
+        }
+
+        function initOverlay(challengeId) {
+            let challenge = null;
+            let socket = null;
+
+            renderLoading();
+
+            fetchChallenge(challengeId);
+
+            connectSocket(challengeId);
+
+            async function fetchChallenge(id) {
+                try {
+                    const response = await fetch(`/api/challenge/${id}`);
+                    if (!response.ok) throw new Error('Challenge not found');
+                    challenge = await response.json();
+                    render();
+                } catch (error) {
+                    console.error('Error fetching challenge:', error);
+                    renderError(error.message);
+                }
+            }
+
+            function connectSocket(id) {
+                socket = io({
+                    path: '/socket.io',
+                    transports: ['websocket', 'polling']
+                });
+
+                socket.on('connect', () => {
+                    console.log('Connected to Socket.IO');
+                    socket.emit('join-challenge', id);
+                });
+
+                socket.on('challenge-updated', (updatedChallenge) => {
+                    console.log('Challenge updated:', updatedChallenge);
+                    challenge = updatedChallenge;
+                    render();
+                });
+
+                socket.on('challenge-deleted', () => {
+                    renderError('Challenge has been deleted');
+                });
+
+                socket.on('disconnect', () => {
+                    console.log('Disconnected from Socket.IO');
+                });
+            }
+
+            function formatTime(ms) {
+                if (!ms) return '00:00:00';
+                const totalSeconds = Math.floor(ms / 1000);
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+                return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }
+
+            function calculateElapsed(timer) {
+                if (!timer.startTime || !timer.isRunning) return timer.duration || 0;
+                const now = new Date();
+                const runningTime = now - new Date(timer.startTime);
+                return Math.max(0, runningTime - (timer.pausedTime || 0));
+            }
+
+            function getCurrentTime(timer) {
+                if (timer.isRunning) {
+                    return calculateElapsed(timer);
+                }
+                return timer.duration || 0;
+            }
+
+            function getStatus() {
+                if (!challenge) return 'loading';
+                if (challenge.forfeited) return 'forfeited';
+                if (challenge.completed) return 'completed';
+                if (challenge.paused) return 'paused';
+                if (challenge.timer.isRunning) return 'running';
+                return 'ready';
+            }
+
+            function getStatusLabel(status) {
+                const labels = {
+                    'running': '● LIVE',
+                    'paused': '⏸ PAUSED',
+                    'completed': '✓ COMPLETED',
+                    'forfeited': '✗ FORFEITED',
+                    'ready': '⏱ READY',
+                    'loading': '...'
+                };
+                return labels[status] || status.toUpperCase();
+            }
+
+            function render() {
+                if (!challenge) return;
+
+                const status = getStatus();
+                const currentTime = getCurrentTime(challenge.timer);
+                const gamesHtml = [...challenge.games, ...challenge.games].map((game, index) => {
+                    const progress = (game.currentWins / game.winCount) * 100;
+                    const gameTime = getCurrentTime(game.timer);
+                    const isCompleted = game.completed;
+                    const isRunning = game.timer.isRunning;
+
+                    return `
+                        <div class="game-card ${isCompleted ? 'completed' : ''}">
+                            <div class="game-header">
+                                <div class="game-name">
+                                    ${isCompleted ? '<span class="checkmark">✓</span>' : ''}
+                                    ${game.name}
+                                </div>
+                                <div class="game-progress">
+                                    <span class="win-count ${isCompleted ? 'completed' : ''}">
+                                        ${game.currentWins}/${game.winCount}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill ${isCompleted ? 'completed' : ''}" 
+                                     style="width: ${progress}%"></div>
+                            </div>
+                            <div class="game-timer ${isRunning ? 'running' : ''}">
+                                ${formatTime(gameTime)}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                const html = `
+                    <div class="overlay-container">
+                        <div class="challenge-header">
+                            <div class="challenge-name">${challenge.name}</div>
+                            <div class="challenge-timer">${formatTime(currentTime)}</div>
+                            <div class="challenge-status status-${status}">
+                                ${getStatusLabel(status)}
+                            </div>
+                        </div>
+                        <div class="games-container">
+                            <div class="games-scroll ${challenge.completed || challenge.paused ? 'paused' : ''}">
+                                ${gamesHtml}
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('app').innerHTML = html;
+
+                if (challenge.timer.isRunning || challenge.games.some(g => g.timer.isRunning)) {
+                    setTimeout(render, 1000);
+                }
+            }
+
+            function renderLoading() {
+                document.getElementById('app').innerHTML = `
+                    <div class="overlay-container">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p style="margin-top: 20px; color: #a6916e;">Loading Challenge...</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function renderError(message) {
+                document.getElementById('app').innerHTML = `
+                    <div class="overlay-container">
+                        <div class="error">
+                            <h2>⚠️ Error</h2>
+                            <p>${message}</p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+
+</html>

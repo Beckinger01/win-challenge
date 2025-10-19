@@ -67,10 +67,10 @@ const DeleteAccount = ({ showMessage }) => {
 
   return (
     <>
-      <div className="p-4 rounded-lg border border-red-800 bg-red-950 bg-opacity-20">
+      <div className="p-4 rounded-lg border border-[#a6916e]">
         <div className="flex items-center justify-between mb-2">
           <div>
-            <h3 className="text-white text-lg font-semibold mb-1">Danger Zone</h3>
+            <h3 className="text-white text-lg font-semibold mb-1">Delete Account</h3>
             <p className="text-gray-400 text-sm">
               Permanently delete your account and all your data
             </p>

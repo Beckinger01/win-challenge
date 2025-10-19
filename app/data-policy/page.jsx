@@ -281,9 +281,16 @@ const DatenschutzPage = () => {
                                 <div className="bg-[#1a1a1a] p-4 rounded-lg">
                                     <p className="mb-2"><strong>Account-Löschung:</strong></p>
                                     <p className="mb-3">
-                                        Eine automatische Löschfunktion befindet sich derzeit in Entwicklung.
-                                        Bis zur Implementierung kannst du die Löschung deines Accounts und aller zugehörigen Daten (E-Mail, Username, Challenges)
-                                        per E-Mail anfordern:
+                                        Du kannst deinen Account jederzeit selbst in den <strong>Einstellungen</strong> löschen.
+                                        Dabei werden alle deine Daten permanent entfernt:
+                                    </p>
+                                    <ul className="list-disc list-inside ml-4 mb-3 space-y-1 text-sm">
+                                        <li>Dein Benutzerkonto (E-Mail, Username)</li>
+                                        <li>Alle von dir erstellten Challenges</li>
+                                        <li>Deine Statistiken und Fortschritte</li>
+                                    </ul>
+                                    <p className="mb-3">
+                                        Alternativ kannst du die Löschung auch per E-Mail anfordern:
                                     </p>
                                     <p>
                                         <a href="mailto:niklasbeck18@gmail.com?subject=Account-Löschung" className="text-blue-400 hover:underline">
@@ -291,7 +298,7 @@ const DatenschutzPage = () => {
                                         </a>
                                     </p>
                                     <p className="mt-2 text-sm text-gray-400">
-                                        Ich werde deine Anfrage innerhalb von 30 Tagen bearbeiten.
+                                        Die Löschung erfolgt sofort und kann nicht rückgängig gemacht werden.
                                     </p>
                                 </div>
 

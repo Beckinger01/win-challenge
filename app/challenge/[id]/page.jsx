@@ -581,11 +581,21 @@ const ChallengeControlPage = ({ params }) => {
               onClick={() => {
                 const url = `${window.location.origin}/challenge/public/${id}`;
                 navigator.clipboard.writeText(url);
-                alert('Link zur Zuschauerseite wurde in die Zwischenablage kopiert!');
+                alert('Link to public view was copied');
               }}
               className="px-2 py-1 gold-bg text-black text-xs sm:text-sm rounded transition duration-300"
             >
-              Copy Link
+              Copy View Link
+            </button>
+            <button
+              onClick={() => {
+                const url = `${window.location.origin}/overlay.html?id=${id}`;
+                navigator.clipboard.writeText(url);
+                alert('BrowserSource Copied');
+              }}
+              className="px-2 py-1 gold-bg text-black text-xs sm:text-sm rounded transition duration-300"
+            >
+              Copy BrowserSource Overlay
             </button>
           </div>
         </div>

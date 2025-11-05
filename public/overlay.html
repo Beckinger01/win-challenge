@@ -1,0 +1,414 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
+    <title>Challenge Overlay</title>
+    <style>
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            overflow: hidden;
+            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+                Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+            color: #eaeaea;
+        }
+
+        .overlay-root {
+            width: 280px;
+            height: 450px;
+            box-sizing: border-box;
+            background: transparent;
+            pointer-events: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            padding: 10px;
+        }
+
+        .card {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 10px;
+            border-radius: 12px;
+            background: rgba(15, 15, 15, 1);
+            border: 1px solid rgba(80, 80, 80, 0.7);
+            backdrop-filter: blur(2px);
+            box-sizing: border-box;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .title {
+            font-weight: 700;
+            font-size: 16px;
+            color: #d7c29a;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            max-width: 70%;
+        }
+
+        .badge {
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 600;
+            line-height: 1.6;
+        }
+
+        .badge.gold {
+            background: linear-gradient(90deg, #e7c67c, #a57a2c);
+            color: #111;
+        }
+
+        .badge.green {
+            background: #0a3d1f;
+            color: #a6e3b7;
+        }
+
+        .badge.red {
+            background: #3b0a0a;
+            color: #f2a3a3;
+        }
+
+        .badge.gray {
+            background: #2f2f2f;
+            color: #cfcfcf;
+        }
+
+        .mainTimer {
+            text-align: center;
+            font-size: 36px;
+            font-weight: 800;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+                "Liberation Mono", "Courier New", monospace;
+            color: #e7d3a5;
+            text-shadow: 0 0 10px rgba(231, 198, 124, 0.2);
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg,
+                    rgba(166, 145, 110, 0) 0%,
+                    rgba(166, 145, 110, 0.7) 30%,
+                    rgba(166, 145, 110, 0.7) 70%,
+                    rgba(166, 145, 110, 0) 100%);
+        }
+
+        .listViewport {
+            position: relative;
+            overflow: hidden;
+            flex: 1;
+            mask-image: linear-gradient(180deg, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%);
+            -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%);
+        }
+
+        .marquee {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            will-change: transform;
+            transform: translateY(0);
+        }
+
+        .marquee.animate {
+            animation-name: scrollPingPong;
+            animation-timing-function: linear;
+            animation-iteration-count: infinite;
+            animation-direction: alternate;
+            animation-duration: var(--duration, 12s);
+        }
+
+        @keyframes scrollPingPong {
+            from {
+                transform: translateY(0);
+            }
+
+            to {
+                transform: translateY(var(--distance, -100px));
+            }
+        }
+
+        .row {
+            padding: 8px;
+            border-radius: 10px;
+            background: rgba(26, 26, 26, 0.85);
+            border: 1px solid #333;
+        }
+
+        .rowTop {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .gameName {
+            font-weight: 600;
+            color: #e7e7e7;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            max-width: 70%;
+            font-size: 14px;
+        }
+
+        .gameStatus {
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .gameStatus.green {
+            background: #0a3d1f;
+            color: #a6e3b7;
+        }
+
+        .gameStatus.gold {
+            background: linear-gradient(90deg, #e7c67c, #a57a2c);
+            color: #111;
+        }
+
+        .gameStatus.gray {
+            background: #2f2f2f;
+            color: #cfcfcf;
+        }
+
+        .rowBottom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .metric {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+
+        .label {
+            font-size: 11px;
+            color: #9b9b9b;
+        }
+
+        .value {
+            font-size: 13px;
+            font-weight: 700;
+            color: #e7e7e7;
+        }
+
+        .mono {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="overlay-root">
+        <div class="card">
+            <div class="header">
+                <div class="title" id="challengeName">Challenge</div>
+                <div class="badge gray" id="challengeStatus">Not started</div>
+            </div>
+
+            <div class="mainTimer" id="challengeTimer">00:00</div>
+
+            <div class="divider"></div>
+
+            <div class="listViewport" id="viewport">
+                <div class="marquee" id="content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script>
+        const SPEED_PX_S = 40;
+        const MIN_S = 6;
+        const MAX_S = 30;
+
+        const qs = new URLSearchParams(location.search);
+        const challengeId = qs.get('id');
+        if (!challengeId) {
+            console.error('overlay.html: Missing ?id=CHALLENGE_ID');
+        }
+
+        const elName = document.getElementById('challengeName');
+        const elStatus = document.getElementById('challengeStatus');
+        const elTimer = document.getElementById('challengeTimer');
+        const vp = document.getElementById('viewport');
+        const content = document.getElementById('content');
+
+        let state = {
+            challenge: null,
+            gameTimers: [],
+            challengeTime: 0
+        };
+
+        function formatTime(ms) {
+            ms = Math.max(0, Math.floor(ms || 0));
+            const totalSec = Math.floor(ms / 1000);
+            const h = Math.floor(totalSec / 3600);
+            const m = Math.floor((totalSec % 3600) / 60);
+            const s = totalSec % 60;
+            if (h > 0) return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
+
+        function getCurrentTimerValue(timer) {
+            if (!timer) return 0;
+            let base = Number(timer.duration || 0);
+            if (timer.isRunning && timer.startTime) {
+                const start = new Date(timer.startTime).getTime();
+                const delta = Date.now() - start;
+                base += Math.max(0, delta);
+            }
+            return base;
+        }
+
+        async function fetchChallengeOnce() {
+            if (!challengeId) return;
+            try {
+                const res = await fetch(`/api/challenges/${challengeId}`, { cache: 'no-store' });
+                if (!res.ok) throw new Error('Fetch failed');
+                const data = await res.json();
+                applyData(data);
+            } catch (e) {
+                console.error('overlay: initial fetch error', e);
+            }
+        }
+
+        function applyData(data) {
+            state.challenge = data;
+            state.challengeTime = getCurrentTimerValue(data.timer);
+            state.gameTimers = (data.games || []).map(g => ({
+                value: getCurrentTimerValue(g.timer),
+                isRunning: !!(g.timer && g.timer.isRunning)
+            }));
+            render();
+        }
+
+        function render() {
+            const c = state.challenge;
+            if (!c) return;
+
+            elName.textContent = c.name || 'Challenge';
+
+            let statusClass = 'gray';
+            let statusText = 'Not started';
+            if (c.forfeited) { statusClass = 'red'; statusText = 'Forfeited'; }
+            else if (c.completed) { statusClass = 'green'; statusText = 'Completed'; }
+            else if (c.timer && c.timer.isRunning) { statusClass = 'gold'; statusText = 'Running'; }
+            const classes = elStatus.className.split(' ').filter(cl => !['gray', 'gold', 'green', 'red'].includes(cl));
+            elStatus.className = `${classes.join(' ')} ${statusClass}`;
+            elStatus.textContent = statusText;
+
+            elTimer.textContent = formatTime(state.challengeTime);
+
+            const games = c.games || [];
+            content.innerHTML = '';
+            games.forEach((g, idx) => {
+                const row = document.createElement('div'); row.className = 'row';
+
+                const rowTop = document.createElement('div'); rowTop.className = 'rowTop';
+                const name = document.createElement('div'); name.className = 'gameName'; name.title = g.name || 'Game'; name.textContent = g.name || 'Game';
+                const status = document.createElement('div'); status.className = 'gameStatus';
+                if (g.completed) { status.classList.add('green'); status.textContent = 'Finished'; }
+                else if (g.timer && g.timer.isRunning) { status.classList.add('gold'); status.textContent = 'Active'; }
+                else { status.classList.add('gray'); status.textContent = 'Idle'; }
+                rowTop.appendChild(name); rowTop.appendChild(status);
+
+                const rowBottom = document.createElement('div'); rowBottom.className = 'rowBottom';
+                const m1 = document.createElement('div'); m1.className = 'metric';
+                const l1 = document.createElement('span'); l1.className = 'label'; l1.textContent = 'Wins';
+                const v1 = document.createElement('span'); v1.className = 'value'; v1.textContent = `${g.currentWins || 0}/${g.winCount || 0}`;
+                m1.appendChild(l1); m1.appendChild(v1);
+
+                const m2 = document.createElement('div'); m2.className = 'metric';
+                const l2 = document.createElement('span'); l2.className = 'label'; l2.textContent = 'Time';
+                const v2 = document.createElement('span'); v2.className = 'value mono';
+                const tVal = state.gameTimers[idx]?.value || 0; v2.textContent = formatTime(tVal);
+                m2.appendChild(l2); m2.appendChild(v2);
+
+                rowBottom.appendChild(m1); rowBottom.appendChild(m2);
+
+                row.appendChild(rowTop);
+                row.appendChild(rowBottom);
+                content.appendChild(row);
+            });
+
+            requestAnimationFrame(updateScrollAnimation);
+        }
+
+        function updateScrollAnimation() {
+            const vpH = (vp && vp.clientHeight) || 0;
+            const ctH = (content && content.scrollHeight) || 0;
+            const distance = Math.max(0, ctH - vpH);
+
+            if (distance <= 2) {
+                content.style.setProperty('--distance', `-0px`);
+                content.style.removeProperty('animation-duration');
+                content.classList.remove('animate');
+                content.style.transform = 'translateY(0)';
+                return;
+            }
+            content.style.setProperty('--distance', `-${distance}px`);
+            const seconds = Math.max(MIN_S, Math.min(MAX_S, distance / SPEED_PX_S));
+            content.style.setProperty('--duration', `${seconds}s`);
+            if (!content.classList.contains('animate')) {
+                content.classList.add('animate');
+            }
+        }
+
+        setInterval(() => {
+            if (!state.challenge) return;
+            if (state.challenge.timer && state.challenge.timer.isRunning) {
+                state.challengeTime += 1000;
+                elTimer.textContent = formatTime(state.challengeTime);
+            }
+            state.gameTimers = state.gameTimers.map(t => t && t.isRunning ? { ...t, value: t.value + 1000 } : t);
+            const rows = content.querySelectorAll('.row');
+            rows.forEach((row, idx) => {
+                const timeEl = row.querySelector('.value.mono');
+                if (timeEl) {
+                    const tVal = state.gameTimers[idx]?.value || 0;
+                    timeEl.textContent = formatTime(tVal);
+                }
+            });
+        }, 1000);
+
+        const socket = io("/", {
+            path: "/socket.io",
+            transports: ["websocket"],
+        });
+
+        socket.on("connect", () => {
+            if (challengeId) socket.emit("join-challenge", challengeId);
+            fetchChallengeOnce();
+        });
+
+        socket.on("challenge-updated", (data) => {
+            if (data?.id && challengeId && data.id !== challengeId) return;
+            applyData(data);
+        });
+    </script>
+</body>
+
+</html>

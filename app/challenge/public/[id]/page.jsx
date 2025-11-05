@@ -4,6 +4,7 @@ import { useState, useEffect, use } from 'react';
 import { useSocket } from '@/hooks/useSocket';
 import { formatTime, getCurrentTimerValue } from '@/utils/timerUtils.client';
 import { User, Clock, Pause } from 'lucide-react';
+import GameCard from '@components/GameCard';
 
 const ChallengePublicPage = ({ params }) => {
   const resolvedParams = use(params);
@@ -305,52 +306,16 @@ const ChallengePublicPage = ({ params }) => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {challenge.games.map((game, index) => (
-            <div
+            <GameCard
               key={index}
-              className={`p-5 rounded-lg ${index === activeGameIndex && !challenge.forfeited
-                ? 'gold-gradient-border gold-pulse'
-                : game.completed
-                  ? 'border-2 border-green-600'
-                  : 'border border-[#333333]'
-                }`}
-              style={{ backgroundColor: '#1a1a1a' }}
-            >
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-lg font-medium gold-text">{game.name}</h3>
-                {game.completed ? (
-                  <span className="px-2 py-1 bg-green-900 text-green-300 text-xs rounded-full">Completed</span>
-                ) : challenge.forfeited ? (
-                  <span className="px-2 py-1 bg-red-900 text-red-300 text-xs rounded-full">Forfeited</span>
-                ) : game.timer.isRunning ? (
-                  <span className="px-2 py-1 gold-gradient-bg text-black text-xs rounded-full flex items-center">
-                    <span className="w-2 h-2 bg-black rounded-full mr-1 animate-pulse"></span>
-                    Active
-                  </span>
-                ) : null}
-              </div>
-
-              <div className="flex justify-between items-center mb-3">
-                <div>
-                  <div className="text-sm text-gray-400">Progress</div>
-                  <div className="text-lg font-semibold gold-text">
-                    {game.currentWins} / {game.winCount} wins
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-400">Time</div>
-                  <div className="text-lg font-mono gold-text">
-                    {formatTime(gameTimers[index]?.value || 0)}
-                  </div>
-                </div>
-              </div>
-
-              <div className="w-full bg-[#2a2a2a] rounded-full h-2 mb-2 overflow-hidden">
-                <div
-                  className={`${challenge.forfeited ? 'bg-red-600' : 'gold-gradient-bg'} h-2 rounded-full transition-all duration-500`}
-                  style={{ width: `${(game.currentWins / game.winCount) * 100}%` }}
-                ></div>
-              </div>
-            </div>
+              challenge={challenge}
+              game={game}
+              index={index}
+              activeGameIndex={activeGameIndex}
+              formatTime={formatTime}
+              gameTimers={gameTimers}
+              isAuthorized={false}
+            />
           ))}
         </div>
       </div>

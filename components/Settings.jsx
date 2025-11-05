@@ -64,15 +64,15 @@ const Settings = () => {
       await update(data);
 
       if (forceRefresh) {
-        console.log("Aktualisiere Session und lade Seite neu:", data);
+        console.log("Reload session und restart the website:", data);
 
         setTimeout(() => {
           router.refresh();
         }, 500);
       }
     } catch (error) {
-      console.error("Fehler beim Aktualisieren der Session:", error);
-      showMessage("Fehler beim Aktualisieren der Benutzereinstellungen. Bitte lade die Seite neu.", true);
+      console.error("Error with reload the session:", error);
+      showMessage("Error with reload the Usersettings. Please restart the website.", true);
     }
   };
 

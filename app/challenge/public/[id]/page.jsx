@@ -41,11 +41,9 @@ const ChallengePublicPage = ({ params }) => {
 
         setChallengeTime(getCurrentTimerValue(data.timer));
 
-        // Initialisiere Pause-Timer
         if (data.pauseTimer) {
           let pauseDuration = data.pauseTimer.duration || 0;
 
-          // Wenn der Pause-Timer läuft, berechne die zusätzliche Zeit seit dem Start
           if (data.pauseTimer.isRunning && data.pauseTimer.startTime) {
             const now = new Date();
             const startTime = new Date(data.pauseTimer.startTime);
@@ -68,7 +66,6 @@ const ChallengePublicPage = ({ params }) => {
           setActiveGameIndex(0);
         }
 
-        // Fetch creator information if creator ID exists
         if (data.creator) {
           try {
             const creatorResponse = await fetch(`/api/user/${data.creator}`);
@@ -78,7 +75,6 @@ const ChallengePublicPage = ({ params }) => {
             }
           } catch (creatorError) {
             console.error("Error fetching creator:", creatorError);
-            // Don't set the main error state, just log it
           }
         }
 
@@ -108,7 +104,6 @@ const ChallengePublicPage = ({ params }) => {
         })
       );
 
-      // Aktualisiere Pause-Timer, wenn er läuft
       if (isPauseRunning) {
         setPauseTime((prev) => prev + 1000);
       }
@@ -129,8 +124,6 @@ const ChallengePublicPage = ({ params }) => {
       })));
 
       setChallengeTime(getCurrentTimerValue(data.timer));
-
-      // Aktualisiere auch Pause-Timer-Daten
       if (data.pauseTimer) {
         setPauseTime(data.pauseTimer.duration || 0);
         setIsPauseRunning(data.pauseTimer.isRunning || false);
@@ -179,14 +172,12 @@ const ChallengePublicPage = ({ params }) => {
     );
   }
 
-  // Zähle abgeschlossene Spiele statt Siege
   const completedGames = challenge.games.filter(game => game.completed).length;
   const totalGames = challenge.games.length;
   const progressPercentage = Math.round((completedGames / totalGames) * 100);
 
   const activeGame = challenge.games[activeGameIndex];
 
-  // Get creator display name
   const creatorName = creatorInfo ? (creatorInfo.username || creatorInfo.name || creatorInfo.email) : null;
 
   return (

@@ -4,10 +4,12 @@ import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { formatTime } from '@/utils/timerUtils.client';
-import GameCard from '@components/GameCard';
+import GamesGrid from '@components/GamesGrid';
 import NoScrollView from '@/components/NoScrollView';
 import { useChallengeController } from '@/hooks/useChallengeController';
 import ChallengeHeader from '@/components/ChallengeHeader';
+import TimerControlsPanel from '@components/TimerControlsPanel';
+import StatusBadge from '@components/StatusBadge';
 
 function useHideNavOnNoScroll(isNoScrollView) {
   useEffect(() => {
@@ -141,7 +143,6 @@ export default function ChallengeControlPage({ params }) {
           isConnected={isConnected}
           onToggleView={toggleView}
           viewLabel="Standard view"
-          publicUrl={`${window.location.origin}/challenge/public/${id}`}
         />
 
         <NoScrollView
@@ -182,127 +183,68 @@ export default function ChallengeControlPage({ params }) {
           showOverlayButton={true}
         />
 
-        {/* Timer + Pause */}
-        <div className="flex flex-col items-center justify-center mb-8">
-          <div className="text-5xl sm:text-7xl md:text-9xl font-mono font-bold gold-shimmer-text mb-3">
-            {formatTime(challengeTime)}
-          </div>
-          <div className="w-full max-w-md mx-auto mb-6">
-            <div className="py-2 px-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-base sm:text-lg font-semibold gold-text">Paused Time:</h2>
-                <div className="text-lg sm:text-2xl font-mono gold-shimmer-text ml-4">
-                  {formatTime(pauseTime)}
-                </div>
-              </div>
-            </div>
-          </div>
+        <TimerControlsPanel
+          challenge={challenge}
+          challengeTime={challengeTime}
+          pauseTime={pauseTime}
+          formatTime={formatTime}
+          onStart={startChallengeTimer}
+          onPause={pauseChallengeTimer}
+          onStop={stopChallengeTimer}
+        />
 
-          {/* Controls */}
-          <div className="flex justify-center flex-wrap sm:flex-nowrap gap-3 sm:space-x-6 w-full max-w-xl mb-6">
-            <button
-              onClick={startChallengeTimer}
-              disabled={challenge.timer?.isRunning || challenge.completed}
-              className={`flex-1 px-4 py-3 sm:px-6 sm:py-4 rounded-md text-base sm:text-xl font-medium ${challenge.timer?.isRunning || challenge.completed
-                ? 'bg-gray-800 text-gray-600'
-                : 'gold-bg text-black gold-pulse'
-                } transition duration-300`}
-            >
-              Start
-            </button>
-            <button
-              onClick={pauseChallengeTimer}
-              disabled={!challenge.timer?.isRunning || challenge.completed}
-              className={`flex-1 px-4 py-3 sm:px-6 sm:py-4 rounded-md text-base sm:text-xl font-medium ${!challenge.timer?.isRunning || challenge.completed
-                ? 'bg-gray-800 text-gray-600'
-                : 'gold-bg text-black'
-                } transition duration-300`}
-            >
-              Pause
-            </button>
-            <button
-              onClick={stopChallengeTimer}
-              disabled={challenge.completed || (!challenge.timer?.startTime && !challenge.timer?.isRunning)}
-              className={`flex-1 px-4 py-3 sm:px-6 sm:py-4 rounded-md text-base sm:text-xl font-medium ${challenge.completed || (!challenge.timer?.startTime && !challenge.timer?.isRunning)
-                ? 'bg-gray-800 text-gray-600'
-                : 'bg-red-700 text-white hover:bg-red-800'
-                } transition duration-300`}
-            >
-              Give Up
-            </button>
-          </div>
-
-          {/* Status */}
-          <div className="flex items-center justify-center mb-6">
-            <span className="font-medium text-base sm:text-lg mr-2 text-gray-400">Status:</span>
-            {challenge.forfeited ? (
-              <span className="text-red-500 text-base sm:text-lg font-bold">Forfeited</span>
-            ) : challenge.completed ? (
-              <span className="text-green-500 text-base sm:text-lg font-bold">Finished</span>
-            ) : challenge.paused ? (
-              <span className="text-yellow-500 text-base sm:text-lg font-bold">Paused</span>
-            ) : challenge.timer?.isRunning ? (
-              <span className="text-blue-500 text-base sm:text-lg font-bold">Running</span>
-            ) : (
-              <span className="text-gray-500 text-base sm:text-lg font-bold">Not started</span>
-            )}
+        {/* Status */}
+        <div className="flex items-center justify-center mb-6">
+          <span className="font-medium text-base sm:text-lg mr-2 text-gray-400">Status:</span>
+          <div className="flex items-center justify-center">
+            <StatusBadge challenge={challenge} isPauseRunning={isPauseRunning} />
           </div>
         </div>
+      </div>
 
-        {/* Games */}
-        <div className="max-w-6xl mx-auto">
-          <div className="bg-[#151515] rounded-lg gold-gradient-border p-4 sm:p-6 shadow-lg relative">
-            <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 gold-shimmer-text border-b border-[#333333] pb-2">
-              Games
-            </h2>
+      {/* Games */}
+      <div className="max-w-6xl mx-auto">
+        <div className="bg-[#151515] rounded-lg gold-gradient-border p-4 sm:p-6 shadow-lg relative">
+          <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 gold-shimmer-text border-b border-[#333333] pb-2">
+            Games
+          </h2>
 
-            {challenge.completed && (
-              <div className="absolute top-0 right-0 px-2 py-1 bg-red-800 text-red-300 text-xs rounded-bl">
-                Challenge ended
-              </div>
-            )}
+          {challenge.completed && (
+            <div className="absolute top-0 right-0 px-2 py-1 bg-red-800 text-red-300 text-xs rounded-bl">
+              Challenge ended
+            </div>
+          )}
 
-            <p className="text-xs sm:text-sm text-gray-400 mb-4 sm:mb-6">
-              Select a game to start its timer. The active game will be marked with a colored border.
-            </p>
+          <p className="text-xs sm:text-sm text-gray-400 mb-4 sm:mb-6">
+            Select a game to start its timer. The active game will be marked with a colored border.
+          </p>
 
-            {isSwitchingGame && (
-              <div className="absolute inset-0 bg-[#151515] bg-opacity-90 flex items-center justify-center z-50 rounded-lg">
-                <div className="text-center">
-                  <div className="gold-shimmer-text text-xl sm:text-2xl font-semibold mb-2">
-                    Changing Game
-                  </div>
-                  <div className="flex justify-center">
-                    <div className="w-2 h-2 gold-bg rounded-full animate-pulse mx-1" />
-                    <div className="w-2 h-2 gold-bg rounded-full animate-pulse mx-1 animation-delay-200" />
-                    <div className="w-2 h-2 gold-bg rounded-full animate-pulse mx-1 animation-delay-400" />
-                  </div>
+          {isSwitchingGame && (
+            <div className="absolute inset-0 bg-[#151515] bg-opacity-90 flex items-center justify-center z-50 rounded-lg">
+              <div className="text-center">
+                <div className="gold-shimmer-text text-xl sm:text-2xl font-semibold mb-2">
+                  Changing Game
+                </div>
+                <div className="flex justify-center">
+                  <div className="w-2 h-2 gold-bg rounded-full animate-pulse mx-1" />
+                  <div className="w-2 h-2 gold-bg rounded-full animate-pulse mx-1 animation-delay-200" />
+                  <div className="w-2 h-2 gold-bg rounded-full animate-pulse mx-1 animation-delay-400" />
                 </div>
               </div>
-            )}
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
-              {challenge.games.map((game, index) => (
-                <GameCard
-                  key={game.id ?? game._id ?? `${game.name}-${index}`}
-                  challenge={challenge}
-                  game={game}
-                  index={index}
-                  isSwitchingGame={isSwitchingGame}
-                  activeGameIndex={activeGameIndex}
-                  pendingGameIndex={pendingGameIndex}
-                  switchToGame={switchToGame}
-                  increaseWinCount={(i, e) => {
-                    e?.stopPropagation?.();
-                    increaseWinCount(i);
-                  }}
-                  formatTime={formatTime}
-                  gameTimers={gameTimers}
-                  isAuthorized={isAuthorized}
-                />
-              ))}
             </div>
-          </div>
+          )}
+
+          <GamesGrid
+            challenge={challenge}
+            isSwitchingGame={isSwitchingGame}
+            activeGameIndex={activeGameIndex}
+            pendingGameIndex={pendingGameIndex}
+            switchToGame={switchToGame}
+            increaseWinCount={(i) => increaseWinCount(i)}
+            formatTime={formatTime}
+            gameTimers={gameTimers}
+            isAuthorized={isAuthorized}
+          />
         </div>
       </div>
     </div>

@@ -1,151 +1,31 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
-import { useSocket } from '@/hooks/useSocket';
-import { formatTime, getCurrentTimerValue } from '@/utils/timerUtils.client';
+import { use } from 'react';
 import { User, Clock, Pause } from 'lucide-react';
-import GameCard from '@components/GameCard';
+import { formatTime } from '@/utils/timerUtils.client';
+import { useChallengeController } from '@/hooks/useChallengeController';
+import StatusBadge from '@/components/StatusBadge';
+import GamesGrid from '@/components/GamesGrid';
 
-const ChallengePublicPage = ({ params }) => {
-  const resolvedParams = use(params);
-  const { id } = resolvedParams;
+export default function ChallengePublicPage({ params }) {
+  const resolved = use(params);
+  const { id } = resolved;
 
-  const { socket, isConnected } = useSocket(id);
-
-  const [challenge, setChallenge] = useState(null);
-  const [creatorInfo, setCreatorInfo] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [challengeTime, setChallengeTime] = useState(0);
-  const [gameTimers, setGameTimers] = useState([]);
-  const [activeGameIndex, setActiveGameIndex] = useState(null);
-  const [pauseTime, setPauseTime] = useState(0);
-  const [isPauseRunning, setIsPauseRunning] = useState(false);
-
-  useEffect(() => {
-    const fetchChallenge = async () => {
-      try {
-        const response = await fetch(`/api/challenges/${id}`);
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch challenge');
-        }
-
-        const data = await response.json();
-        setChallenge(data);
-
-        setGameTimers(data.games.map((game) => ({
-          value: getCurrentTimerValue(game.timer),
-          isRunning: game.timer.isRunning
-        })));
-
-        setChallengeTime(getCurrentTimerValue(data.timer));
-
-        if (data.pauseTimer) {
-          let pauseDuration = data.pauseTimer.duration || 0;
-
-          if (data.pauseTimer.isRunning && data.pauseTimer.startTime) {
-            const now = new Date();
-            const startTime = new Date(data.pauseTimer.startTime);
-            const additionalTime = now - startTime;
-            pauseDuration += additionalTime;
-          }
-
-          setPauseTime(pauseDuration);
-          setIsPauseRunning(data.pauseTimer.isRunning || false);
-        }
-
-        const runningGameIndex = data.games.findIndex(game => game.timer.isRunning);
-        const nonCompletedIndex = data.games.findIndex(game => !game.completed);
-
-        if (runningGameIndex >= 0) {
-          setActiveGameIndex(runningGameIndex);
-        } else if (nonCompletedIndex >= 0) {
-          setActiveGameIndex(nonCompletedIndex);
-        } else if (data.games.length > 0) {
-          setActiveGameIndex(0);
-        }
-
-        if (data.creator) {
-          try {
-            const creatorResponse = await fetch(`/api/user/${data.creator}`);
-            if (creatorResponse.ok) {
-              const creatorData = await creatorResponse.json();
-              setCreatorInfo(creatorData);
-            }
-          } catch (creatorError) {
-            console.error("Error fetching creator:", creatorError);
-          }
-        }
-
-        setLoading(false);
-      } catch (err) {
-        setError(err.message);
-        setLoading(false);
-      }
-    };
-
-    fetchChallenge();
-  }, [id]);
-
-  useEffect(() => {
-    if (!challenge) return;
-
-    const timerInterval = setInterval(() => {
-      if (challenge.timer.isRunning) {
-        setChallengeTime((prev) => prev + 1000);
-      }
-      setGameTimers((prevTimers) =>
-        prevTimers.map((timer, index) => {
-          if (timer.isRunning) {
-            return { ...timer, value: timer.value + 1000 };
-          }
-          return timer;
-        })
-      );
-
-      if (isPauseRunning) {
-        setPauseTime((prev) => prev + 1000);
-      }
-    }, 1000);
-
-    return () => clearInterval(timerInterval);
-  }, [challenge, isPauseRunning]);
-
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleChallengeUpdated = (data) => {
-      setChallenge(data);
-
-      setGameTimers(data.games.map((game) => ({
-        value: getCurrentTimerValue(game.timer),
-        isRunning: game.timer.isRunning
-      })));
-
-      setChallengeTime(getCurrentTimerValue(data.timer));
-      if (data.pauseTimer) {
-        setPauseTime(data.pauseTimer.duration || 0);
-        setIsPauseRunning(data.pauseTimer.isRunning || false);
-      }
-
-      const runningGameIndex = data.games.findIndex(game => game.timer.isRunning);
-      if (runningGameIndex >= 0 && runningGameIndex !== activeGameIndex) {
-        setActiveGameIndex(runningGameIndex);
-      }
-    };
-
-    socket.on('challenge-updated', handleChallengeUpdated);
-
-    return () => {
-      socket.off('challenge-updated', handleChallengeUpdated);
-    };
-  }, [socket, activeGameIndex]);
+  const {
+    challenge,
+    loading,
+    error,
+    challengeTime,
+    gameTimers,
+    activeGameIndex,
+    pauseTime,
+    isPauseRunning,
+  } = useChallengeController(id, false);
 
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#a6916e]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#a6916e]" />
       </div>
     );
   }
@@ -153,7 +33,7 @@ const ChallengePublicPage = ({ params }) => {
   if (error) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <div className="gold-gradient-border p-8 rounded-lg text-center" style={{ backgroundColor: '#1a1a1a' }}>
+        <div className="gold-gradient-border p-8 rounded-lg text-center bg-[#1a1a1a]">
           <h2 className="text-2xl font-bold gold-text mb-4">Error</h2>
           <p className="text-red-500">{error}</p>
         </div>
@@ -164,7 +44,7 @@ const ChallengePublicPage = ({ params }) => {
   if (!challenge) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <div className="gold-gradient-border p-8 rounded-lg text-center" style={{ backgroundColor: '#1a1a1a' }}>
+        <div className="gold-gradient-border p-8 rounded-lg text-center bg-[#1a1a1a]">
           <h2 className="text-2xl font-bold gold-text mb-4">Not Found</h2>
           <p className="text-gray-300">Challenge not found</p>
         </div>
@@ -172,38 +52,47 @@ const ChallengePublicPage = ({ params }) => {
     );
   }
 
-  const completedGames = challenge.games.filter(game => game.completed).length;
-  const totalGames = challenge.games.length;
+  const completedGames = challenge.games.filter((g) => g.completed).length;
+  const totalGames = Math.max(1, challenge.games.length);
   const progressPercentage = Math.round((completedGames / totalGames) * 100);
-
-  const activeGame = challenge.games[activeGameIndex];
-
-  const creatorName = creatorInfo ? (creatorInfo.username || creatorInfo.name || creatorInfo.email) : null;
+  const activeGame =
+    activeGameIndex !== null && activeGameIndex !== undefined
+      ? challenge.games[activeGameIndex]
+      : null;
 
   return (
     <div className="container mx-auto p-4 max-w-7xl">
+      {/* Header */}
       <div className="mb-10 text-center">
-        <h1 className="text-4xl md:text-5xl font-bold gold-shimmer-text pb-4">{challenge.name}</h1>
-        {/* Creator info display */}
-        {creatorName && (
+        <h1 className="text-4xl md:text-5xl font-bold gold-shimmer-text pb-4">
+          {challenge.name}
+        </h1>
+
+        {/* Optional: Creator-Info, falls vorhanden */}
+        {challenge.creatorName && (
           <div className="flex items-center justify-center mb-2">
             <User size={16} className="text-[#a6916e] mr-1" />
-            <span className="text-[#a6916e]">Created by {creatorName}</span>
+            <span className="text-[#a6916e]">Created by {challenge.creatorName}</span>
           </div>
         )}
+
         <p className="text-gray-300">{challenge.type} Challenge</p>
       </div>
 
+      {/* Drei Kacheln: Timer / Overall Progress / Active Game */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
         {/* Challenge Timer */}
-        <div className="gold-gradient-border rounded-lg p-6" style={{ backgroundColor: '#1a1a1a' }}>
+        <div className="gold-gradient-border rounded-lg p-6 bg-[#1a1a1a]">
           <h2 className="text-xl font-semibold mb-4 gold-text">
             <Clock size={20} className="inline mr-2 text-[#a6916e]" />
             Challenge Timer
           </h2>
-          <div className="text-5xl font-mono text-center mb-4 gold-shimmer-text">{formatTime(challengeTime)}</div>
 
-          {/* Pause Timer anzeigen */}
+          <div className="text-5xl font-mono text-center mb-4 gold-shimmer-text">
+            {formatTime(challengeTime)}
+          </div>
+
+          {/* Pause Timer */}
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center text-gray-300">
               <Pause size={18} className="inline mr-1 text-[#a6916e]" />
@@ -213,105 +102,90 @@ const ChallengePublicPage = ({ params }) => {
           </div>
 
           <div className="flex items-center justify-center">
-            <div className={`px-3 py-1 rounded-full ${challenge.forfeited
-              ? 'bg-red-900 text-red-300'
-              : challenge.completed
-                ? 'bg-green-900 text-green-300'
-                : isPauseRunning
-                  ? 'bg-yellow-900 text-yellow-300'
-                  : challenge.timer.isRunning
-                    ? 'gold-gradient-bg text-black'
-                    : 'bg-gray-800 text-gray-300'
-              }`}>
-              {challenge.forfeited
-                ? 'Forfeited'
-                : challenge.completed
-                  ? 'Completed'
-                  : isPauseRunning
-                    ? 'Paused'
-                    : challenge.timer.isRunning
-                      ? 'Running'
-                      : 'Not Started'}
-            </div>
+            <StatusBadge challenge={challenge} isPauseRunning={isPauseRunning} />
           </div>
         </div>
 
         {/* Overall Progress */}
-        <div className="gold-gradient-border rounded-lg p-6" style={{ backgroundColor: '#1a1a1a' }}>
+        <div className="gold-gradient-border rounded-lg p-6 bg-[#1a1a1a]">
           <h2 className="text-xl font-semibold mb-4 gold-text">Overall Progress</h2>
-          <div className="text-5xl font-bold text-center mb-4 gold-shimmer-text">{progressPercentage}%</div>
-
+          <div className="text-5xl font-bold text-center mb-4 gold-shimmer-text">
+            {progressPercentage}%
+          </div>
           <div className="w-full bg-[#2a2a2a] rounded-full h-4 mb-4 overflow-hidden">
             <div
-              className={`${challenge.forfeited ? 'bg-red-600' : 'gold-gradient-bg'} h-4 rounded-full transition-all duration-500`}
+              className={`${challenge.forfeited ? 'bg-red-600' : 'gold-gradient-bg'
+                } h-4 rounded-full transition-all duration-500`}
               style={{ width: `${progressPercentage}%` }}
-            ></div>
+            />
           </div>
-
           <div className="text-center text-gray-300">
-            <span className="font-medium gold-text">{completedGames}</span> of <span className="font-medium gold-text">{totalGames}</span> games completed
-            {challenge.forfeited && <div className="text-red-400 mt-2">Challenge was forfeited</div>}
+            <span className="font-medium gold-text">{completedGames}</span> of{' '}
+            <span className="font-medium gold-text">{totalGames}</span> games completed
+            {challenge.forfeited && (
+              <div className="text-red-400 mt-2">Challenge was forfeited</div>
+            )}
           </div>
         </div>
 
         {/* Active Game */}
-        <div className="gold-gradient-border rounded-lg p-6" style={{ backgroundColor: '#1a1a1a' }}>
+        <div className="gold-gradient-border rounded-lg p-6 bg-[#1a1a1a]">
           <h2 className="text-xl font-semibold mb-4 gold-text">Active Game</h2>
-
           {activeGame ? (
             <>
-              <div className="text-2xl font-bold text-center mb-4 gold-shimmer-text">{activeGame.name}</div>
-
+              <div className="text-2xl font-bold text-center mb-4 gold-shimmer-text">
+                {activeGame.name}
+              </div>
               <div className="flex justify-between mb-4">
                 <div>
                   <div className="text-sm text-gray-400">Progress</div>
-                  <div className="text-xl font-semibold gold-text">{activeGame.currentWins} / {activeGame.winCount}</div>
+                  <div className="text-xl font-semibold gold-text">
+                    {activeGame.currentWins} / {activeGame.winCount}
+                  </div>
                 </div>
                 <div>
                   <div className="text-sm text-gray-400">Timer</div>
-                  <div className="text-xl font-mono gold-text">{formatTime(gameTimers[activeGameIndex]?.value || 0)}</div>
+                  <div className="text-xl font-mono gold-text">
+                    {formatTime(gameTimers?.[activeGameIndex]?.value || 0)}
+                  </div>
                 </div>
               </div>
-
               <div className="w-full bg-[#2a2a2a] rounded-full h-4 overflow-hidden">
                 <div
                   className="gold-gradient-bg h-4 rounded-full transition-all duration-500"
-                  style={{ width: `${(activeGame.currentWins / activeGame.winCount) * 100}%` }}
-                ></div>
+                  style={{
+                    width: `${Math.round(
+                      (activeGame.currentWins / Math.max(1, activeGame.winCount)) * 100
+                    )}%`,
+                  }}
+                />
               </div>
             </>
           ) : (
             <div className="text-center text-gray-400">
               {challenge.forfeited
-                ? "Challenge was forfeited"
+                ? 'Challenge was forfeited'
                 : challenge.completed
-                  ? "All games completed"
-                  : "No active game"}
+                  ? 'All games completed'
+                  : 'No active game'}
             </div>
           )}
         </div>
       </div>
 
+      {/* All Games */}
       <div className="mb-12">
         <h2 className="text-2xl font-semibold mb-6 gold-text">All Games</h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {challenge.games.map((game, index) => (
-            <GameCard
-              key={index}
-              challenge={challenge}
-              game={game}
-              index={index}
-              activeGameIndex={activeGameIndex}
-              formatTime={formatTime}
-              gameTimers={gameTimers}
-              isAuthorized={false}
-            />
-          ))}
-        </div>
+        <GamesGrid
+          challenge={challenge}
+          activeGameIndex={activeGameIndex}
+          formatTime={formatTime}
+          gameTimers={gameTimers}
+          isAuthorized={false}
+        />
+
       </div>
     </div>
   );
-};
-
-export default ChallengePublicPage;
+}

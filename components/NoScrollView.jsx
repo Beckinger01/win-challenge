@@ -1,7 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { formatTime } from '@/utils/timerUtils.client';
+import TimerControlsPanel from './TimerControlsPanel';
+import StatusBadge from './StatusBadge';
+import GamesGrid from './GamesGrid';
 
 const NoScrollView = ({
     challenge,
@@ -22,19 +25,20 @@ const NoScrollView = ({
     const scrollRef = useRef(null);
     const activeGameRef = useRef(null);
 
+    // Rotation alle 5s
     useEffect(() => {
         if (!challenge?.games?.length) return;
         const interval = setInterval(() => {
             setRotatingGameIndex((prevIndex) => {
                 const len = challenge.games.length;
                 if (!len) return 0;
-                const nextIndex = (prevIndex + 1) % len;
-                return nextIndex;
+                return (prevIndex + 1) % len;
             });
         }, 5000);
         return () => clearInterval(interval);
     }, [challenge?.games?.length]);
 
+    // Kappe Rotation wenn sich die Länge ändert
     useEffect(() => {
         const len = challenge?.games?.length ?? 0;
         if (!len) {
@@ -46,6 +50,7 @@ const NoScrollView = ({
         }
     }, [challenge?.games?.length, rotatingGameIndex]);
 
+    // Zum aktiven Spiel scrollen
     useEffect(() => {
         if (!scrollRef.current) return;
         if (activeGameIndex === null || activeGameIndex === undefined) return;
@@ -57,95 +62,62 @@ const NoScrollView = ({
 
     if (!challenge) return null;
 
-    const canStart = !challenge?.timer?.isRunning && !challenge?.completed;
-    const canPause = !!challenge?.timer?.isRunning && !challenge?.completed;
-    const canStop = !challenge?.completed && !!(challenge?.timer?.startTime || challenge?.timer?.isRunning);
+    const activeGame =
+        activeGameIndex !== null && activeGameIndex !== undefined
+            ? challenge.games[activeGameIndex]
+            : null;
 
-    const activeGame = activeGameIndex !== null && activeGameIndex !== undefined
-        ? challenge.games[activeGameIndex]
-        : null;
+    const rotatingGame =
+        (challenge.games?.length ?? 0) > 0 ? challenge.games[rotatingGameIndex] : null;
 
-    const rotatingGame = (challenge.games?.length ?? 0) > 0
-        ? challenge.games[rotatingGameIndex]
-        : null;
+    const canActivateListItem = useCallback(
+        (idx) =>
+            !isSwitchingGame &&
+            !challenge?.paused &&
+            !challenge?.completed &&
+            !!challenge?.timer?.isRunning &&
+            !challenge?.games?.[idx]?.completed,
+        [challenge, isSwitchingGame]
+    );
 
-    const canActivateListItem = (idx) =>
-        !isSwitchingGame &&
-        !challenge?.paused &&
-        !challenge?.completed &&
-        !!challenge?.timer?.isRunning &&
-        !challenge?.games?.[idx]?.completed;
+    const handleListItemClick = useCallback(
+        (index, disabled) => {
+            if (disabled) return;
+            switchToGame(index);
+        },
+        [switchToGame]
+    );
 
-    const handleWinClick = () => {
+    const handleWinClick = useCallback(() => {
         if (!activeGame) return;
         if (!challenge?.paused && !challenge?.completed && challenge?.timer?.isRunning) {
             increaseWinCount(activeGameIndex);
         }
-    };
+    }, [activeGame, challenge, increaseWinCount, activeGameIndex]);
 
     return (
         <div className="max-h-screen text-white">
-            {/* Timer section */}
+            {/* Timer + Controls */}
             <div className="flex flex-col items-center justify-center pt-6 pb-4">
-                <div className="text-9xl font-mono font-bold gold-shimmer-text">
-                    {formatTime(challengeTime)}
-                </div>
-
-                <div className="mb-4">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-lg font-semibold gold-text">Paused Time:</h2>
-                        <div className="text-2xl font-mono gold-shimmer-text ml-4">
-                            {formatTime(pauseTime)}
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex justify-center space-x-6 w-full max-w-xl mb-4">
-                    <button
-                        onClick={startChallengeTimer}
-                        disabled={!canStart}
-                        className={`flex-1 px-6 py-3 rounded-md text-xl font-medium ${!canStart ? 'bg-gray-800 text-gray-600' : 'gold-bg text-black gold-pulse'
-                            } transition duration-300`}
-                    >
-                        Start
-                    </button>
-                    <button
-                        onClick={pauseChallengeTimer}
-                        disabled={!canPause}
-                        className={`flex-1 px-6 py-3 rounded-md text-xl font-medium ${!canPause ? 'bg-gray-800 text-gray-600' : 'gold-bg text-black'
-                            } transition duration-300`}
-                    >
-                        Pause
-                    </button>
-                    <button
-                        onClick={stopChallengeTimer}
-                        disabled={!canStop}
-                        className={`flex-1 px-6 py-3 rounded-md text-xl font-medium ${!canStop ? 'bg-gray-800 text-gray-600' : 'bg-red-700 text-white hover:bg-red-800'
-                            } transition duration-300`}
-                    >
-                        Give Up
-                    </button>
-                </div>
+                <TimerControlsPanel
+                    challenge={challenge}
+                    challengeTime={challengeTime}
+                    pauseTime={pauseTime}
+                    formatTime={formatTime}
+                    onStart={startChallengeTimer}
+                    onPause={pauseChallengeTimer}
+                    onStop={stopChallengeTimer}
+                />
 
                 <div className="flex items-center justify-center mb-4">
                     <span className="font-medium text-lg mr-2 text-gray-400">Status:</span>
-                    {challenge.forfeited ? (
-                        <span className="text-red-500 text-lg font-bold">Forfeited</span>
-                    ) : challenge.completed ? (
-                        <span className="text-green-500 text-lg font-bold">Finished</span>
-                    ) : challenge.paused ? (
-                        <span className="text-yellow-500 text-lg font-bold">Paused</span>
-                    ) : challenge?.timer?.isRunning ? (
-                        <span className="text-blue-500 text-lg font-bold">Running</span>
-                    ) : (
-                        <span className="text-gray-500 text-lg font-bold">Not started</span>
-                    )}
+                    <StatusBadge challenge={challenge} isPauseRunning={isPauseRunning} />
                 </div>
             </div>
 
             {/* Three columns layout */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-4 h-[calc(100vh-400px)]">
-                {/* Left: Scrollable game list */}
+                {/* Left: Scrollable game list (eigene Liste mit Scroll + Activate-Logik) */}
                 <div className="bg-[#151515] rounded-lg gold-gradient-border p-4 overflow-hidden relative">
                     <h2 className="text-xl font-semibold mb-3 gold-shimmer-text border-b border-[#333333] pb-2">
                         Game List
@@ -168,17 +140,12 @@ const NoScrollView = ({
                         {(challenge.games ?? []).map((game, index) => {
                             const key = game.id ?? game._id ?? `${game.name ?? 'game'}-${index}`;
                             const isActive = activeGameIndex === index || pendingGameIndex === index;
-                            const disabled = game.completed
-                                ? true
-                                : !canActivateListItem(index);
+                            const disabled = game.completed ? true : !canActivateListItem(index);
 
                             return (
                                 <div
                                     key={key}
-                                    onClick={() => {
-                                        if (disabled) return;
-                                        switchToGame(index);
-                                    }}
+                                    onClick={() => handleListItemClick(index, disabled)}
                                     className={`game-list-item mb-3 p-3 rounded-lg transition-all duration-300 ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'
                                         } ${game.completed
                                             ? 'bg-[#1a1a1a] border-2 border-green-600'
@@ -241,7 +208,9 @@ const NoScrollView = ({
                                 </div>
                                 <div className="flex items-center">
                                     {activeGame.completed ? (
-                                        <span className="px-3 py-1 bg-green-900 text-green-300 text-base rounded-full">Finished</span>
+                                        <span className="px-3 py-1 bg-green-900 text-green-300 text-base rounded-full">
+                                            Finished
+                                        </span>
                                     ) : (
                                         <span className="px-3 py-1 gold-bg text-black text-base rounded-full flex items-center">
                                             <span className="w-3 h-3 bg-black rounded-full mr-2 animate-pulse" />
@@ -262,7 +231,10 @@ const NoScrollView = ({
                                 <div className="bg-[#1a1a1a] p-4 rounded-lg">
                                     <div className="text-base text-gray-400 mb-1">Game percentage</div>
                                     <div className="text-3xl font-bold gold-text">
-                                        {Math.round((activeGame.currentWins / Math.max(1, activeGame.winCount)) * 100)}%
+                                        {Math.round(
+                                            (activeGame.currentWins / Math.max(1, activeGame.winCount)) * 100
+                                        )}
+                                        %
                                     </div>
                                 </div>
                             </div>
@@ -297,7 +269,7 @@ const NoScrollView = ({
                     )}
                 </div>
 
-                {/* Right: Rotating stats (ohne Progress-Bar) */}
+                {/* Right: Rotating stats */}
                 <div className="bg-[#151515] rounded-lg gold-gradient-border p-4">
                     <div className="flex justify-between items-center border-b border-[#333333] pb-2 mb-3">
                         <h2 className="text-xl font-semibold gold-shimmer-text">Game Stats</h2>
@@ -309,11 +281,15 @@ const NoScrollView = ({
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-xl font-bold gold-text">{rotatingGame.name}</h3>
                                 {rotatingGame.completed ? (
-                                    <span className="px-2 py-1 bg-green-900 text-green-300 text-xs rounded-full">Finished</span>
+                                    <span className="px-2 py-1 bg-green-900 text-green-300 text-xs rounded-full">
+                                        Finished
+                                    </span>
                                 ) : rotatingGameIndex === activeGameIndex ? (
                                     <span className="px-2 py-1 gold-bg text-black text-xs rounded-full">Active</span>
                                 ) : (
-                                    <span className="px-2 py-1 bg-gray-700 text-gray-300 text-xs rounded-full">Inactive</span>
+                                    <span className="px-2 py-1 bg-gray-700 text-gray-300 text-xs rounded-full">
+                                        Inactive
+                                    </span>
                                 )}
                             </div>
 

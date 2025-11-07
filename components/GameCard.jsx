@@ -63,7 +63,12 @@ const GameCard = ({
                     : activeGameIndex === index || pendingGameIndex === index
                         ? "bg-gold-active border-3 gold-gradient-border-active game-card-active"
                         : "bg-[#1a1a1a] border border-[#333333] hover:gold-border"
+                }
+        ${isAuthorized
+                    ? "cursor-pointer"
+                    : ""
                 }`}
+
         >
             {!game?.completed &&
                 (activeGameIndex === index || pendingGameIndex === index) && (

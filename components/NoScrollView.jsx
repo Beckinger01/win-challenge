@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { formatTime } from '@/utils/timerUtils.client';
 import TimerControlsPanel from './TimerControlsPanel';
 import StatusBadge from './StatusBadge';
-import GamesGrid from './GamesGrid';
 
 const NoScrollView = ({
     challenge,

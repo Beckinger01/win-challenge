@@ -1,70 +1,50 @@
+// app/api/challenges/[id]/route.js
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { connectToDB } from '@/utils/database';
 import Challenge from '@/models/challenge';
 import User from '@/models/user';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { NextResponse } from 'next/server';
+
+const calculateElapsed = (timer) => {
+  if (!timer?.startTime || !timer?.isRunning) return timer?.duration || 0;
+  const now = new Date();
+  const runningTime = now - new Date(timer.startTime);
+  return Math.max(0, runningTime - (timer.pausedTime || 0));
+};
 
 export async function GET(request, context) {
   const { id } = await context.params;
-
   try {
     await connectToDB();
-
     const challenge = await Challenge.findById(id);
-
     if (!challenge) {
-      return NextResponse.json(
-        { message: 'Challenge not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ message: 'Challenge not found' }, { status: 404 });
     }
-
     return NextResponse.json(challenge);
   } catch (error) {
     console.error('Error fetching challenge:', error);
-    return NextResponse.json(
-      { message: 'Error fetching challenge' },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Error fetching challenge' }, { status: 500 });
   }
 }
 
 export async function DELETE(request, context) {
   const { id } = await context.params;
-
   try {
     await connectToDB();
-
     const session = await getServerSession(authOptions);
-
     if (!session?.user) {
-      return NextResponse.json(
-        { message: 'Nicht autorisiert' },
-        { status: 401 }
-      );
+      return NextResponse.json({ message: 'Nicht autorisiert' }, { status: 401 });
     }
-
     const challenge = await Challenge.findById(id);
-
     if (!challenge) {
-      return NextResponse.json(
-        { message: 'Challenge nicht gefunden' },
-        { status: 404 }
-      );
+      return NextResponse.json({ message: 'Challenge nicht gefunden' }, { status: 404 });
     }
-
     const user = await User.findOne({ email: session.user.email });
-
     if (!user) {
-      return NextResponse.json(
-        { message: 'Benutzer nicht gefunden' },
-        { status: 404 }
-      );
+      return NextResponse.json({ message: 'Benutzer nicht gefunden' }, { status: 404 });
     }
-
     const isCreator = user._id.toString() === challenge.creator.toString();
-
     if (!isCreator) {
       return NextResponse.json(
         { message: 'Nur der Ersteller darf die Challenge löschen' },
@@ -77,26 +57,12 @@ export async function DELETE(request, context) {
     if (typeof global.io !== 'undefined') {
       global.io.to(`challenge-${id}`).emit('challenge-deleted', { id });
     }
-
-    return NextResponse.json(
-      { message: 'Challenge erfolgreich gelöscht' },
-      { status: 200 }
-    );
+    return NextResponse.json({ message: 'Challenge erfolgreich gelöscht' }, { status: 200 });
   } catch (error) {
     console.error('Error deleting challenge:', error);
-    return NextResponse.json(
-      { message: 'Fehler beim Löschen der Challenge' },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Fehler beim Löschen der Challenge' }, { status: 500 });
   }
 }
-
-const calculateElapsed = (timer) => {
-  if (!timer.startTime || !timer.isRunning) return timer.duration || 0;
-  const now = new Date();
-  const runningTime = now - new Date(timer.startTime);
-  return Math.max(0, runningTime - (timer.pausedTime || 0));
-};
 
 export async function PUT(request, context) {
   const { id } = await context.params;
@@ -106,34 +72,46 @@ export async function PUT(request, context) {
     if (!session?.user) {
       return NextResponse.json({ message: 'Nicht autorisiert' }, { status: 401 });
     }
+
     const body = await request.json();
-    const { action, gameIndex, challengeTime, gameTimers, pauseTime, isPauseRunning, forfeited } = body;
+    const { action, gameIndex, challengeTime, gameTimers, pauseTime, isPauseRunning } = body;
+
     let challenge = await Challenge.findById(id);
     if (!challenge) {
       return NextResponse.json({ message: 'Challenge nicht gefunden' }, { status: 404 });
     }
+
     const user = await User.findOne({ email: session.user.email });
     if (!user) {
       return NextResponse.json({ message: 'Benutzer nicht gefunden' }, { status: 404 });
     }
     const isCreator = user._id.toString() === challenge.creator.toString();
     if (!isCreator) {
-      return NextResponse.json({ message: 'Nur der Ersteller darf die Challenge aktualisieren' }, { status: 403 });
+      return NextResponse.json(
+        { message: 'Nur der Ersteller darf die Challenge aktualisieren' },
+        { status: 403 }
+      );
     }
-    if (!challenge.pauseTimer) {
-      challenge.pauseTimer = {};
-    }
+
+    // pauseTimer sicherstellen
+    if (!challenge.pauseTimer) challenge.pauseTimer = {};
+
+    // Stopp-Aktionen: Dauerwerte übernehmen
     const isStopAction = ['stop-all-timers', 'stop-challenge-timer', 'stop-game-timer', 'forfeited-challenge'].includes(action);
     if (isStopAction && challengeTime !== undefined) {
-      if (!challenge.timer.isRunning) challenge.timer.duration = challengeTime;
+      if (!challenge.timer.isRunning) {
+        challenge.timer.duration = challengeTime;
+      }
     }
-    if (isStopAction && gameTimers && Array.isArray(gameTimers) && challenge.games) {
-      challenge.games.forEach((game, index) => {
-        if (gameTimers[index] !== undefined && !game.timer.isRunning) {
-          game.timer.duration = gameTimers[index];
+    if (isStopAction && Array.isArray(gameTimers) && challenge.games) {
+      challenge.games.forEach((game, idx) => {
+        if (gameTimers[idx] !== undefined && !game.timer.isRunning) {
+          game.timer.duration = gameTimers[idx];
         }
       });
     }
+
+    // Pause-Timer aktualisieren (nur Werte, kein Reset)
     if (pauseTime !== undefined) {
       challenge.pauseTimer.duration = pauseTime;
     }
@@ -142,55 +120,27 @@ export async function PUT(request, context) {
     }
 
     switch (action) {
-      case 'start-challenge-timer':
+      case 'start-challenge-timer': {
         const now = new Date();
         if (!challenge.timer.isRunning) {
           if (!challenge.timer.startTime) {
             challenge.timer.startTime = now;
           } else if (challenge.timer.lastPauseTime) {
-            const pauseDuration = now - challenge.timer.lastPauseTime;
-            challenge.timer.pausedTime += pauseDuration;
+            const pauseDur = now - challenge.timer.lastPauseTime;
+            challenge.timer.pausedTime += pauseDur;
             challenge.timer.lastPauseTime = null;
           }
           challenge.timer.isRunning = true;
           challenge.paused = false;
-          if (challenge.pauseTimer && challenge.pauseTimer.isRunning) {
+          if (challenge.pauseTimer?.isRunning) {
             challenge.pauseTimer.isRunning = false;
             challenge.pauseTimer.startTime = null;
           }
         }
         break;
+      }
 
-      case 'stop-all-timers':
-        challenge.timer.isRunning = false;
-        if (challenge.timer.isRunning || challengeTime !== undefined) {
-          challenge.timer.duration = challengeTime !== undefined ? challengeTime : calculateElapsed(challenge.timer);
-        }
-        challenge.completed = true;
-
-        if (gameTimers && Array.isArray(gameTimers) && challenge.games) {
-          challenge.games.forEach((game, index) => {
-            game.timer.isRunning = false;
-            if (gameTimers[index] !== undefined) {
-              game.timer.duration = gameTimers[index];
-            } else if (game.timer.isRunning) {
-              game.timer.duration = calculateElapsed(game.timer);
-            }
-            game.timer.startTime = null;
-            game.timer.pausedTime = 0;
-            game.timer.lastPauseTime = null;
-          });
-        }
-
-        if (challenge.pauseTimer) {
-          challenge.pauseTimer.isRunning = false;
-          if (pauseTime !== undefined) {
-            challenge.pauseTimer.duration = pauseTime;
-          }
-        }
-        break;
-
-      case 'pause-challenge-timer':
+      case 'pause-challenge-timer': {
         if (challenge.timer.isRunning) {
           const now = new Date();
           challenge.timer.lastPauseTime = now;
@@ -213,8 +163,9 @@ export async function PUT(request, context) {
           });
         }
         break;
+      }
 
-      case 'stop-challenge-timer':
+      case 'stop-challenge-timer': {
         if (challenge.timer.startTime) {
           const endTime = new Date();
           challenge.timer.endTime = endTime;
@@ -225,14 +176,48 @@ export async function PUT(request, context) {
           challenge.timer.startTime = null;
           challenge.timer.pausedTime = 0;
           challenge.timer.lastPauseTime = null;
-
           if (challenge.pauseTimer) {
             challenge.pauseTimer.isRunning = false;
           }
         }
         break;
+      }
 
-      case 'forfeited-challenge':
+      case 'stop-all-timers': {
+        // stoppe Challenge-Timer und schreibe Dauer
+        if (challenge.timer.isRunning || challengeTime !== undefined) {
+          challenge.timer.duration =
+            challengeTime !== undefined ? challengeTime : calculateElapsed(challenge.timer);
+        }
+        challenge.timer.isRunning = false;
+        challenge.completed = true;
+
+        // stoppe alle Spiel-Timer und schreibe Dauer
+        if (Array.isArray(gameTimers) && challenge.games) {
+          challenge.games.forEach((game, idx) => {
+            const wasRunning = game.timer.isRunning;
+            game.timer.isRunning = false;
+            if (gameTimers[idx] !== undefined) {
+              game.timer.duration = gameTimers[idx];
+            } else if (wasRunning) {
+              game.timer.duration = calculateElapsed(game.timer);
+            }
+            game.timer.startTime = null;
+            game.timer.pausedTime = 0;
+            game.timer.lastPauseTime = null;
+          });
+        }
+
+        if (challenge.pauseTimer) {
+          challenge.pauseTimer.isRunning = false;
+          if (pauseTime !== undefined) {
+            challenge.pauseTimer.duration = pauseTime;
+          }
+        }
+        break;
+      }
+
+      case 'forfeited-challenge': {
         challenge.forfeited = true;
         if (challenge.timer.startTime) {
           const endTime = new Date();
@@ -257,44 +242,39 @@ export async function PUT(request, context) {
               }
             }
           });
-
           if (challenge.pauseTimer) {
             challenge.pauseTimer.isRunning = false;
           }
         }
         break;
+      }
 
-      case 'start-game-timer':
+      case 'start-game-timer': {
         if (gameIndex !== undefined) {
           const now = new Date();
 
           for (let i = 0; i < challenge.games.length; i++) {
             if (i !== gameIndex && challenge.games[i].timer.isRunning) {
-              const otherGame = challenge.games[i];
-
-
-              otherGame.timer.lastPauseTime = now;
-              otherGame.timer.isRunning = false;
-
+              const other = challenge.games[i];
+              if (other.timer.startTime) {
+                other.timer.duration = calculateElapsed(other.timer);
+              }
+              other.timer.lastPauseTime = now;
+              other.timer.isRunning = false;
             }
           }
 
           const game = challenge.games[gameIndex];
           if (game && !game.completed) {
-            if (game.timer.lastPauseTime) {
-              const pauseDuration = now - game.timer.lastPauseTime;
-              game.timer.pausedTime += pauseDuration;
-              game.timer.lastPauseTime = null;
-            }
-
-
-            if (!game.timer.startTime) {
+            if (!game.timer.startTime && game.timer.duration > 0) {
+              game.timer.startTime = new Date(now.getTime() - game.timer.duration);
+              game.timer.pausedTime = 0;
+            } else if (!game.timer.startTime) {
               game.timer.startTime = now;
               game.timer.pausedTime = 0;
-            }
-
-
-            if (game.timer.lastPauseTime) {
+            } else if (game.timer.lastPauseTime) {
+              const pauseDur = now - game.timer.lastPauseTime;
+              game.timer.pausedTime += pauseDur;
               game.timer.lastPauseTime = null;
             }
 
@@ -302,9 +282,9 @@ export async function PUT(request, context) {
           }
         }
         break;
+      }
 
-
-      case 'pause-game-timer':
+      case 'pause-game-timer': {
         if (gameIndex !== undefined) {
           const game = challenge.games[gameIndex];
           if (game && game.timer.isRunning) {
@@ -313,8 +293,9 @@ export async function PUT(request, context) {
           }
         }
         break;
+      }
 
-      case 'stop-game-timer':
+      case 'stop-game-timer': {
         if (gameIndex !== undefined) {
           const game = challenge.games[gameIndex];
           if (game && game.timer.startTime) {
@@ -327,14 +308,16 @@ export async function PUT(request, context) {
           }
         }
         break;
+      }
 
-      case 'increase-win-count':
+      case 'increase-win-count': {
         if (gameIndex !== undefined) {
           const game = challenge.games[gameIndex];
           if (game) {
             game.currentWins += 1;
             if (game.currentWins >= game.winCount) {
               game.completed = true;
+              // Game-Timer beenden, wenn aktiv
               if (game.timer.isRunning && game.timer.startTime) {
                 const elapsed = calculateElapsed(game.timer);
                 game.timer.duration = elapsed;
@@ -345,7 +328,7 @@ export async function PUT(request, context) {
                 game.timer.lastPauseTime = null;
               }
             }
-            const allCompleted = challenge.games.every(g => g.completed);
+            const allCompleted = challenge.games.every((g) => g.completed);
             if (allCompleted) {
               challenge.completed = true;
               challenge.completedAt = new Date();
@@ -361,19 +344,34 @@ export async function PUT(request, context) {
             }
           }
         }
-        break
+        break;
+      }
+
+      case 'reset-challenge': {
+        if (Array.isArray(challenge.games)) {
+          for (let i = 0; i < challenge.games.length; i++) {
+            const g = challenge.games[i];
+            g.currentWins = 0;
+            g.completed = false;
+          }
+        }
+        challenge.paused = false;
+        challenge.forfeited = false;
+        challenge.completed = false;
+        challenge.completedAt = null;
+        break;
+      }
 
       default:
-        return NextResponse.json(
-          { message: 'Invalid action' },
-          { status: 400 }
-        );
+        return NextResponse.json({ message: 'Invalid action' }, { status: 400 });
     }
 
     await challenge.save();
+
     if (typeof global.io !== 'undefined') {
       global.io.to(`challenge-${id}`).emit('challenge-updated', challenge);
     }
+
     return NextResponse.json(challenge);
   } catch (error) {
     console.error('Error updating challenge:', error);

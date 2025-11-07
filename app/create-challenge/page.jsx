@@ -93,17 +93,17 @@ const CreateChallenge = () => {
             />
 
             <TypeWinCard
-              type="Coin Toss"
-              desc="After each win, a coin is tossed. A win only counts if heads or tails are correctly guessed."
-              link="#"
-              isAvailable={false}
-              comingSoon={true}
+              type="FirstTry"
+              desc="All victories must be won consecutively. Once you lose, you have to start over."
+              link="/create-challenge/firsttry"
+              isAvailable={true}
+              comingSoon={false}
               isSmallScreen={isSmallScreen}
             />
 
             <TypeWinCard
-              type="FirstTry"
-              desc="All victories must be won consecutively. Once you lose, you have to start over."
+              type="Coin Toss"
+              desc="After each win, a coin is tossed. A win only counts if heads or tails are correctly guessed."
               link="#"
               isAvailable={false}
               comingSoon={true}

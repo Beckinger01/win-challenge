@@ -219,6 +219,12 @@ export default function ChallengeControlPage({ params }) {
             Select a game to start its timer. The active game will be marked with a colored border.
           </p>
 
+          {challenge?.type === 'FirstTry' && (
+            <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 gold-shimmer-text border-b border-[#333333] pb-2">
+              Lost Streaks: {challenge.streaksBroken}
+            </h3>
+          )}
+
           {isSwitchingGame && (
             <div className="absolute inset-0 bg-[#151515] bg-opacity-90 flex items-center justify-center z-50 rounded-lg">
               <div className="text-center">

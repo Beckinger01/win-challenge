@@ -6,8 +6,6 @@ export default function GameCard({
     challenge,
     game,
     index,
-
-    // Optionale Props:
     isSwitchingGame = false,
     activeGameIndex = -1,
     pendingGameIndex = -1,
@@ -17,10 +15,8 @@ export default function GameCard({
     gameTimers = [],
     isAuthorized = false,
 
-    // FirstTry-Unterstützung:
-    // Wenn true oder challenge.type === 'FirstTry', wird zusätzlich der "Nicht geschafft"-Button angezeigt.
     isFirstTry,
-    onFirstTryFail, // optional: Parent-Handler, sonst Default-API-Call
+    onFirstTryFail,
 }) {
     const isActive = activeGameIndex === index && pendingGameIndex !== index;
     const isPending = pendingGameIndex === index;
@@ -28,7 +24,6 @@ export default function GameCard({
 
     const isFirstTryMode = useMemo(() => {
         if (typeof isFirstTry === 'boolean') return isFirstTry;
-        // Falls du ein anderes Flag verwendest (z. B. challenge.mode === 'firsttry'), passe das hier an:
         return challenge?.type === 'FirstTry';
     }, [isFirstTry, challenge?.type]);
 
@@ -201,7 +196,7 @@ export default function GameCard({
                             className={`w-full py-1.5 sm:py-2 px-3 sm:px-4 rounded font-medium text-xs sm:text-sm
 								${!canWin
                                     ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
-                                    : 'gold-bg text-black gold-pulse'
+                                    : 'gold-bg text-black'
                                 } transition duration-300`}
                         >
                             Win +1
@@ -211,14 +206,14 @@ export default function GameCard({
                         {isFirstTryMode && (
                             <button
                                 onClick={handleFirstTryFail}
-                                disabled={isSwitchingGame}
-                                className={`w-full py-1.5 sm:py-2 px-3 sm:px-4 rounded font-medium text-xs sm:text-sm
-									${isSwitchingGame
+                                disabled={!canWin}
+                                className={`w-full py-1.5 sm:py-2 px-3 sm:px-4 rounded border border-red-800 font-medium text-xs sm:text-sm
+									${!canWin
                                         ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
-                                        : 'bg-red-700 text-white hover:bg-red-800'
+                                        : 'text-white hover:bg-red-800'
                                     } transition duration-300`}
                             >
-                                Nicht geschafft
+                                Lost
                             </button>
                         )}
                     </div>

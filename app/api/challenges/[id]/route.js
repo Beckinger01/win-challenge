@@ -288,8 +288,15 @@ export async function PUT(request, context) {
         if (gameIndex !== undefined) {
           const game = challenge.games[gameIndex];
           if (game && game.timer.isRunning) {
+            if (game.timer.startTime) {
+              game.timer.duration = calculateElapsed(game.timer);
+            }
             game.timer.lastPauseTime = new Date();
             game.timer.isRunning = false;
+          }
+
+          if (Array.isArray(gameTimers) && gameTimers[gameIndex] !== undefined) {
+            game.timer.duration = gameTimers[gameIndex];
           }
         }
         break;
@@ -349,16 +356,22 @@ export async function PUT(request, context) {
 
       case 'reset-challenge': {
         if (Array.isArray(challenge.games)) {
+          const hadCompletedGames = challenge.games.some(g => g.completed);
           for (let i = 0; i < challenge.games.length; i++) {
             const g = challenge.games[i];
             g.currentWins = 0;
             g.completed = false;
+          }
+          if (hadCompletedGames) {
+            challenge.streaksBroken = (challenge.streaksBroken || 0) + 1;
           }
         }
         challenge.paused = false;
         challenge.forfeited = false;
         challenge.completed = false;
         challenge.completedAt = null;
+        
+        await challenge.save();
         break;
       }
 

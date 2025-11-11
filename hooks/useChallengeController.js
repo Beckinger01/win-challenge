@@ -81,16 +81,25 @@ export function useChallengeController(id, enabledAuth) {
         const onUpdate = (data) => {
             setChallenge(data);
             setChallengeTime(getCurrentTimerValue(data.timer));
+
+            // WICHTIG: Verwende getCurrentTimerValue für alle Game-Timer
             setGameTimers(
                 data.games.map((g) => ({
                     value: getCurrentTimerValue(g.timer),
                     isRunning: !!g.timer?.isRunning,
                 }))
             );
+
             const activeIdx = data.games.findIndex((g) => g.timer?.isRunning);
             setActiveGameIndex(activeIdx >= 0 ? activeIdx : null);
+
+            // WICHTIG: Auch bei pauseTimer getCurrentTimerValue-Logik anwenden
             if (data.pauseTimer) {
-                setPauseTime(data.pauseTimer.duration || 0);
+                let p = data.pauseTimer.duration || 0;
+                if (data.pauseTimer.isRunning && data.pauseTimer.startTime) {
+                    p += Date.now() - new Date(data.pauseTimer.startTime).getTime();
+                }
+                setPauseTime(p);
                 setIsPauseRunning(!!data.pauseTimer.isRunning);
             }
         };
@@ -141,6 +150,8 @@ export function useChallengeController(id, enabledAuth) {
         const updated = await res.json();
 
         setChallenge(updated);
+
+        // WICHTIG: Auch hier getCurrentTimerValue verwenden
         setGameTimers(
             updated.games.map((g) => ({
                 value: getCurrentTimerValue(g.timer),
@@ -173,24 +184,48 @@ export function useChallengeController(id, enabledAuth) {
     }
 
     async function switchToGame(index) {
-        if (index === activeGameIndex) return;
-        if (challenge?.games[index]?.completed) return;
-        if (isSwitchingGame || challenge?.completed || !challenge?.timer?.isRunning) return;
+    if (index === activeGameIndex) return;
+    if (challenge?.games[index]?.completed) return;
+    if (isSwitchingGame || challenge?.completed || !challenge?.timer?.isRunning) return;
 
-        try {
-            setIsSwitchingGame(true);
-            setPendingGameIndex(index);
-            if (activeGameIndex !== null) {
-                await updateChallenge({ action: 'pause-game-timer', gameIndex: activeGameIndex, pauseTime, isPauseRunning });
-            }
-            const res = await updateChallenge({ action: 'start-game-timer', gameIndex: index, pauseTime, isPauseRunning });
-            if (!res) throw new Error('start-game-timer fehlgeschlagen');
-            setActiveGameIndex(index);
-        } finally {
-            setPendingGameIndex(null);
-            setTimeout(() => setIsSwitchingGame(false), 300);
+    try {
+        setIsSwitchingGame(true);
+        setPendingGameIndex(index);
+        
+        if (activeGameIndex !== null) {
+            const currentGameTimerValue = gameTimers[activeGameIndex]?.value || 0;
+            
+            setGameTimers((prev) =>
+                prev.map((gt, i) => {
+                    if (i === activeGameIndex) {
+                        return { value: currentGameTimerValue, isRunning: false };
+                    }
+                    return gt;
+                })
+            );
+            
+            await updateChallenge({ 
+                action: 'pause-game-timer', 
+                gameIndex: activeGameIndex, 
+                pauseTime, 
+                isPauseRunning,
+                gameTimers: gameTimers.map(gt => gt.value)
+            });
         }
+        
+        const res = await updateChallenge({ 
+            action: 'start-game-timer', 
+            gameIndex: index, 
+            pauseTime, 
+            isPauseRunning 
+        });
+        if (!res) throw new Error('start-game-timer fehlgeschlagen');
+        setActiveGameIndex(index);
+    } finally {
+        setPendingGameIndex(null);
+        setTimeout(() => setIsSwitchingGame(false), 300);
     }
+}
 
     function increaseWinCount(index) {
         void updateChallenge({ action: 'increase-win-count', gameIndex: index });

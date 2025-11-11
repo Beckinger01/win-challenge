@@ -100,7 +100,6 @@ const ChallengeSchema = new Schema({
     type: TimerSchema,
     default: () => ({})
   },
-  // Neues Feld für den Pause-Timer
   pauseTimer: {
     type: {
       startTime: {
@@ -117,6 +116,10 @@ const ChallengeSchema = new Schema({
       }
     },
     default: () => ({})
+  },
+  streaksBroken: {
+    type: Number,
+    default: 0
   }
 });
 

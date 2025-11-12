@@ -24,7 +24,6 @@ const NoScrollView = ({
     const scrollRef = useRef(null);
     const activeGameRef = useRef(null);
 
-    // Rotation alle 5s
     useEffect(() => {
         if (!challenge?.games?.length) return;
         const interval = setInterval(() => {
@@ -37,7 +36,6 @@ const NoScrollView = ({
         return () => clearInterval(interval);
     }, [challenge?.games?.length]);
 
-    // Kappe Rotation wenn sich die Länge ändert
     useEffect(() => {
         const len = challenge?.games?.length ?? 0;
         if (!len) {
@@ -49,7 +47,6 @@ const NoScrollView = ({
         }
     }, [challenge?.games?.length, rotatingGameIndex]);
 
-    // Zum aktiven Spiel scrollen
     useEffect(() => {
         if (!scrollRef.current) return;
         if (activeGameIndex === null || activeGameIndex === undefined) return;
@@ -94,6 +91,25 @@ const NoScrollView = ({
         }
     }, [activeGame, challenge, increaseWinCount, activeGameIndex]);
 
+    const handleLostClick = useCallback(
+        async (e) => {
+            if (!activeGame) return;
+            try {
+                const id = challenge?._id || challenge?.id;
+                if (!id) return;
+                const res = await fetch(`/api/challenges/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'reset-challenge' }),
+                });
+                if (!res.ok) {
+                    console.error('Reset failed');
+                }
+            } catch (err) {
+                console.error('Reset error:', err);
+            }
+        }, [activeGame, challenge]);
+
     return (
         <div className="max-h-screen text-white">
             {/* Timer + Controls */}
@@ -118,10 +134,11 @@ const NoScrollView = ({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-4 h-[calc(100vh-400px)]">
                 {/* Left: Scrollable game list (eigene Liste mit Scroll + Activate-Logik) */}
                 <div className="bg-[#151515] rounded-lg gold-gradient-border p-4 overflow-hidden relative">
-                    <h2 className="text-xl font-semibold mb-3 gold-shimmer-text border-b border-[#333333] pb-2">
-                        Game List
-                    </h2>
-
+                    <div className="flex justify-between text-xl font-semibold mb-3 gold-shimmer-text border-b border-[#333333] pb-2">
+                        <h2>Game List</h2>
+                        <h2>Lost Streaks: {challenge.streaksBroken}</h2>
+                    </div>
+                        
                     {isSwitchingGame && (
                         <div className="absolute inset-0 bg-[#151515] bg-opacity-90 flex items-center justify-center z-10 rounded-lg">
                             <div className="text-center">
@@ -250,15 +267,35 @@ const NoScrollView = ({
                                     !challenge?.timer?.isRunning
                                 }
                                 className={`w-full py-2 px-2 rounded-lg font-medium text-xl ${activeGame.completed ||
-                                        isSwitchingGame ||
-                                        challenge.paused ||
-                                        challenge.completed ||
-                                        !challenge?.timer?.isRunning
-                                        ? 'bg-gray-800 text-gray-600'
-                                        : 'gold-bg text-black gold-pulse'
+                                    isSwitchingGame ||
+                                    challenge.paused ||
+                                    challenge.completed ||
+                                    !challenge?.timer?.isRunning
+                                    ? 'bg-gray-800 text-gray-600'
+                                    : 'gold-bg text-black gold-pulse'
                                     } transition duration-300`}
                             >
                                 Win +1
+                            </button>
+                            <button
+                                onClick={handleLostClick}
+                                disabled={
+                                    activeGame.completed ||
+                                    isSwitchingGame ||
+                                    challenge.paused ||
+                                    challenge.completed ||
+                                    !challenge?.timer?.isRunning
+                                }
+                                className={`w-full py-2 px-2 border border-red-800 mt-2 rounded-lg font-medium text-xl ${activeGame.completed ||
+                                    isSwitchingGame ||
+                                    challenge.paused ||
+                                    challenge.completed ||
+                                    !challenge?.timer?.isRunning
+                                    ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
+                                    : 'text-white hover:bg-red-800'
+                                    } transition duration-300`}
+                            >
+                                Lost
                             </button>
                         </div>
                     ) : (

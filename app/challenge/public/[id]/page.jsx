@@ -6,6 +6,7 @@ import { formatTime } from '@/utils/timerUtils.client';
 import { useChallengeController } from '@/hooks/useChallengeController';
 import StatusBadge from '@/components/StatusBadge';
 import GamesGrid from '@/components/GamesGrid';
+import { checkCustomRoutes } from '@node_modules/next/dist/lib/load-custom-routes';
 
 export default function ChallengePublicPage({ params }) {
   const resolved = use(params);
@@ -107,26 +108,45 @@ export default function ChallengePublicPage({ params }) {
         </div>
 
         {/* Overall Progress */}
-        <div className="gold-gradient-border rounded-lg p-6 bg-[#1a1a1a]">
-          <h2 className="text-xl font-semibold mb-4 gold-text">Overall Progress</h2>
-          <div className="text-5xl font-bold text-center mb-4 gold-shimmer-text">
-            {progressPercentage}%
+        {challenge?.type === 'Classic' && (
+          <div className="gold-gradient-border rounded-lg p-6 bg-[#1a1a1a]">
+            <h2 className="text-xl font-semibold mb-4 gold-text">Overall Progress</h2>
+            <div className="text-5xl font-bold text-center mb-4 gold-shimmer-text">
+              {progressPercentage}%
+            </div>
+            <div className="w-full bg-[#2a2a2a] rounded-full h-4 mb-4 overflow-hidden">
+              <div
+                className={`${challenge.forfeited ? 'bg-red-600' : 'gold-gradient-bg'
+                  } h-4 rounded-full transition-all duration-500`}
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+            <div className="text-center text-gray-300">
+              <span className="font-medium gold-text">{completedGames}</span> of{' '}
+              <span className="font-medium gold-text">{totalGames}</span> games completed
+              {challenge.forfeited && (
+                <div className="text-red-400 mt-2">Challenge was forfeited</div>
+              )}
+            </div>
           </div>
-          <div className="w-full bg-[#2a2a2a] rounded-full h-4 mb-4 overflow-hidden">
-            <div
-              className={`${challenge.forfeited ? 'bg-red-600' : 'gold-gradient-bg'
-                } h-4 rounded-full transition-all duration-500`}
-              style={{ width: `${progressPercentage}%` }}
-            />
+        )}
+
+        {challenge?.type === 'FirstTry' && (
+          <div className="gold-gradient-border rounded-lg p-6 bg-[#1a1a1a]">
+            <h2 className="text-xl font-semibold mb-4 gold-text">Lost Streaks</h2>
+            <div className="text-5xl font-bold text-center mb-4 gold-shimmer-text">
+              {challenge.streaksBroken}
+            </div>
+            <h2 className="text-l font-semibold mb-4 gold-text">Overall Progress</h2>
+            <div className="text-center text-gray-300">
+              <span className="font-medium gold-text">{completedGames}</span> of{' '}
+              <span className="font-medium gold-text">{totalGames}</span> games completed
+              {challenge.forfeited && (
+                <div className="text-red-400 mt-2">Challenge was forfeited</div>
+              )}
+            </div>
           </div>
-          <div className="text-center text-gray-300">
-            <span className="font-medium gold-text">{completedGames}</span> of{' '}
-            <span className="font-medium gold-text">{totalGames}</span> games completed
-            {challenge.forfeited && (
-              <div className="text-red-400 mt-2">Challenge was forfeited</div>
-            )}
-          </div>
-        </div>
+        )}
 
         {/* Active Game */}
         <div className="gold-gradient-border rounded-lg p-6 bg-[#1a1a1a]">

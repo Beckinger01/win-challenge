@@ -1,8 +1,21 @@
 import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { Lock } from 'lucide-react';
 
-const TypeWinCard = ({ type, desc, link, isAvailable = true, comingSoon = false }) => {
+const TypeWinCard = ({ type, desc, link, isAvailable = true, comingSoon = false, requiresPremium = false, hasPremium = false, onPremiumClick }) => {
+
+  const handleClick = (e) => {
+    if (!isAvailable) {
+      e.preventDefault();
+      return;
+    }
+
+    if (requiresPremium && !hasPremium && onPremiumClick) {
+      onPremiumClick(e);
+    }
+  };
+
   return (
     <motion.div
       whileHover={isAvailable ? { scale: 1.05 } : { scale: 1.02 }}
@@ -15,7 +28,7 @@ const TypeWinCard = ({ type, desc, link, isAvailable = true, comingSoon = false 
           ? 'gold-gradient-border gold-pulse'
           : 'border border-gray-800'
           }`}
-        onClick={(e) => !isAvailable && e.preventDefault()}
+        onClick={handleClick}
         style={{ backgroundColor: '#1a1a1a' }}
       >
         {/* Header section - fixed at top */}

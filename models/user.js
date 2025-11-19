@@ -23,6 +23,18 @@ const UserSchema = new Schema({
     },
     resetTokenExpiry: {
         type: Number
+    },
+    hasPremium: {
+        type: Boolean,
+        default: false
+    },
+    stripeCustomerId: {
+        type: String,
+        default: null
+    },
+    premiumPurchaseDate: {
+        type: Date,
+        default: null
     }
 });
 

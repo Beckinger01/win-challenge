@@ -2,6 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import TypeWinCard from "@/components/TypeWinCard";
+import PaywallModal from "@/components/PaywallModal";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
@@ -33,6 +34,7 @@ const CreateChallenge = () => {
   const { data: session, status } = useSession();
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -47,6 +49,15 @@ const CreateChallenge = () => {
     window.addEventListener('resize', checkScreenSize);
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
+
+  const handlePremiumClick = (e) => {
+    e.preventDefault();
+    if (!session?.user?.hasPremium) {
+      setShowPaywall(true);
+    } else {
+      window.location.href = "/create-challenge/firsttry";
+    }
+  };
 
   if (!isClient || status === "loading") {
     return (
@@ -97,7 +108,9 @@ const CreateChallenge = () => {
               desc="All victories must be won consecutively. Once you lose, you have to start over."
               link="/create-challenge/firsttry"
               isAvailable={true}
-              comingSoon={false}
+              requiresPremium={true}
+              hasPremium={session?.user?.hasPremium}
+              onPremiumClick={handlePremiumClick}
               isSmallScreen={isSmallScreen}
             />
 
@@ -110,6 +123,7 @@ const CreateChallenge = () => {
               isSmallScreen={isSmallScreen}
             />
           </motion.div>
+          {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
         </motion.div>
       ) : (
         <motion.div

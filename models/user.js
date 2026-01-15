@@ -32,6 +32,10 @@ const UserSchema = new Schema({
         type: String,
         default: null
     },
+    stripeSubscriptionId: {
+        type: String,
+        default: null
+    },
     premiumPurchaseDate: {
         type: Date,
         default: null

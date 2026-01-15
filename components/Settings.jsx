@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import UsernameEditForm from "@/components/settings/UsernameEditForm";
 import EmailEditForm from "@/components/settings/EmailEditForm";
 import PasswordEditForm from "@/components/settings/PasswordEditForm";
+import Premium from "./settings/Premium";
 import DeleteAccount from "./settings/DeleteAccount";
 
 const Settings = () => {
@@ -122,6 +123,9 @@ const Settings = () => {
           />
         </>
       )}
+      <Premium
+        showMessage={showMessage}
+      />
       <DeleteAccount
         showMessage={showMessage}
       />

@@ -44,7 +44,7 @@ const PasswordEditForm = ({ showMessage }) => {
   };
 
   return (
-    <div className="p-4 rounded-lg border border-[#a6916e]">
+    <div className="mb-6 p-4 rounded-lg border border-[#a6916e]">
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-white text-lg font-semibold">Password</h3>
         {!isResetRequested && !isRequestingReset && (

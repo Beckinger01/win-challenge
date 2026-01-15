@@ -36,9 +36,10 @@ export async function POST(req) {
         await connectDB();
         await User.findOneAndUpdate(
             { stripeSubscriptionId: subscription.id },
-            { hasPremium: false }
+            {
+                hasPremium: false,
+                stripeSubscriptionId: null
+            }
         );
-
-        return NextResponse.json({ received: true });
     }
 }
